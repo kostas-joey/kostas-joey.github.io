@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Foosball Elo Rating System</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Foosball Elo Rating System</h1>
+        
+        <!-- Add Player Form -->
+        <div class="add-player">
+            <h2>Add New Player</h2>
+            <form id="player-form">
+                <input type="text" id="player-name" placeholder="Player Name" required>
+                <input type="number" id="player-rating" value="1200">
+                <button type="submit">Add Player</button>
+            </form>
+        </div>
+
+        <!-- Match Logger -->
+        <div class="match-logger">
+            <h2>Log Match</h2>
+            <div class="match-type">
+                <label class="switch">
+                    <input type="checkbox" id="team-match">
+                    <span class="slider round"></span>
+                </label>
+                <span class="match-type-label">1v1 Match</span>
+            </div>
+            
+            <div class="teams-container">
+                <div class="team team1">
+                    <h3>Team 1</h3>
+                    <div class="player-input">
+                        <label for="player1">Player 1</label>
+                        <input type="text" id="player1" list="players-list" required>
+                    </div>
+                    <div class="player-input team-player">
+                        <label for="player2">Player 2</label>
+                        <input type="text" id="player2" list="players-list">
+                    </div>
+                </div>
+
+                <div class="versus">VS</div>
+
+                <div class="team team2">
+                    <h3>Team 2</h3>
+                    <div class="player-input">
+                        <label for="player3">Player 1</label>
+                        <input type="text" id="player3" list="players-list" required>
+                    </div>
+                    <div class="player-input team-player">
+                        <label for="player4">Player 2</label>
+                        <input type="text" id="player4" list="players-list">
+                    </div>
+                </div>
+            </div>
+
+            <div class="winner-selection">
+                <h3>Select Winner</h3>
+                <div class="radio-group">
+                    <label class="radio-button">
+                        <input type="radio" name="winner" value="team1" required>
+                        <span class="radio-label">Team 1 Wins</span>
+                    </label>
+                    <label class="radio-button">
+                        <input type="radio" name="winner" value="team2" required>
+                        <span class="radio-label">Team 2 Wins</span>
+                    </label>
+                </div>
+            </div>
+
+            <button id="log-match" class="primary-button">Log Match</button>
+
+            <datalist id="players-list">
+                <!-- Will be populated with JavaScript -->
+            </datalist>
+        </div>
+
+        <!-- Player List -->
+        <div class="player-rankings">
+            <h2>Player Rankings</h2>
+            <div class="rankings-container">
+                <div class="rankings-header">
+                    <span class="rank">#</span>
+                    <span class="name">Player</span>
+                    <span class="elo">ELO</span>
+                    <span class="stats">W/L</span>
+                    <span class="ratio">Win Rate</span>
+                </div>
+                <ul id="player-list"></ul>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>
