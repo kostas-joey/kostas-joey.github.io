@@ -1,15 +1,16 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, doc, setDoc, getDoc, getDocs } from "firebase/firestore"; 
 
-// Your Firebase configuration
+// Your web app's Firebase configuration
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT_ID.appspot.com",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID"
-};
+    apiKey: "AIzaSyCC6oO1N3jkcLbyX0q9NYqWbR-VoRtZ-fQ",
+    authDomain: "new-project-8e4ac.firebaseapp.com",
+    projectId: "new-project-8e4ac",
+    storageBucket: "new-project-8e4ac.firebasestorage.app",
+    messagingSenderId: "921717995613",
+    appId: "1:921717995613:web:539ba4a30df006c944b5b4"
+  };
+  
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
