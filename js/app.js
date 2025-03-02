@@ -115,16 +115,22 @@ function handleLogMatch() {
 }
 
 function updateTeamMatch(player1, player2, player3, player4, team1Wins) {
-    const team1Elo = (getPlayerRating(player1) + getPlayerRating(player2)) / 2;
-    const team2Elo = (getPlayerRating(player3) + getPlayerRating(player4)) / 2;
+    // Calculate Elo change based on team means
+    const eloChange = calculateTeamEloChange([player1, player2], [player3, player4], team1Wins);
 
-    const newTeam1Elo = calculateElo(team1Elo, team2Elo, team1Wins ? 1 : 0);
-    const newTeam2Elo = calculateElo(team2Elo, team1Elo, team1Wins ? 0 : 1);
+    // Update each player's individual rating
+    const team1Players = [player1, player2];
+    const team2Players = [player3, player4];
 
-    updatePlayerData(playerRatings, player1, newTeam1Elo, team1Wins);
-    updatePlayerData(playerRatings, player2, newTeam1Elo, team1Wins);
-    updatePlayerData(playerRatings, player3, newTeam2Elo, !team1Wins);
-    updatePlayerData(playerRatings, player4, newTeam2Elo, !team1Wins);
+    team1Players.forEach(player => {
+        const currentRating = getPlayerRating(player);
+        updatePlayerData(playerRatings, player, currentRating + eloChange, team1Wins);
+    });
+
+    team2Players.forEach(player => {
+        const currentRating = getPlayerRating(player);
+        updatePlayerData(playerRatings, player, currentRating - eloChange, !team1Wins);
+    });
 
     savePlayerData(playerRatings);
 }
