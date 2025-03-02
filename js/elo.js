@@ -79,7 +79,7 @@ async function loadPlayerData() {
     }
 }
 
- 
+//
 //  async function savePlayerData(playerData) {
 //      try {
 //          localStorage.setItem('foosballPlayerData', JSON.stringify(playerData));
