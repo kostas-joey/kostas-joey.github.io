@@ -1,4 +1,20 @@
+import { initializeApp } from "firebase/app";
+import { getFirestore, collection, getDocs, setDoc, doc } from "firebase/firestore";
 import { calculateElo, updatePlayerData, loadPlayerData, savePlayerData } from './elo.js';
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyCC6oO1N3jkcLbyX0q9NYqWbR-VoRtZ-fQ",
+    authDomain: "new-project-8e4ac.firebaseapp.com",
+    projectId: "new-project-8e4ac",
+    storageBucket: "new-project-8e4ac.firebasestorage.app",
+    messagingSenderId: "921717995613",
+    appId: "1:921717995613:web:539ba4a30df006c944b5b4"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 // DOM Elements
 const playerList = document.getElementById('player-list');
@@ -15,7 +31,7 @@ async function init() {
     playerRatings = await loadPlayerData() || {};
     updatePlayerList();
     setupEventListeners();
-    toggleTeamInputs(); // Add this line
+    toggleTeamInputs();
     updatePlayersList();
 }
 
@@ -155,7 +171,7 @@ function updatePlayerList() {
         const winRate = data.matches > 0 ? 
             ((data.wins / data.matches) * 100).toFixed(1) : 0;
         
-        li.innerHTML = 
+        li.innerHTML = `
             <span class="rank">${index + 1}</span>
             <span class="name">${player}</span>
             <span class="elo">${Math.round(data.rating)}</span>
@@ -166,7 +182,7 @@ function updatePlayerList() {
                     <div class="win-rate-fill" style="width: ${winRate}%"></div>
                 </div>
             </div>
-        ;
+        `;
         
         playerList.appendChild(li);
     });
