@@ -1,7 +1,4 @@
-<<<<<<< HEAD
-import { getFirestore, collection, getDocs, setDoc, doc } from "firebase/firestore";
-const db = getFirestore();
-=======
+
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, doc, setDoc, getDoc, getDocs } from "firebase/firestore"; 
 
