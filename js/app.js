@@ -99,22 +99,16 @@ function handleLogMatch() {
 }
 
 function updateTeamMatch(player1, player2, player3, player4, team1Wins) {
-    // Calculate Elo change based on team means
-    const eloChange = calculateTeamEloChange([player1, player2], [player3, player4], team1Wins);
+    const team1Elo = (getPlayerRating(player1) + getPlayerRating(player2)) / 2;
+    const team2Elo = (getPlayerRating(player3) + getPlayerRating(player4)) / 2;
 
-    // Update each player's individual rating
-    const team1Players = [player1, player2];
-    const team2Players = [player3, player4];
+    const newTeam1Elo = calculateElo(team1Elo, team2Elo, team1Wins ? 1 : 0);
+    const newTeam2Elo = calculateElo(team2Elo, team1Elo, team1Wins ? 0 : 1);
 
-    team1Players.forEach(player => {
-        const currentRating = getPlayerRating(player);
-        updatePlayerData(playerRatings, player, currentRating + eloChange, team1Wins);
-    });
-
-    team2Players.forEach(player => {
-        const currentRating = getPlayerRating(player);
-        updatePlayerData(playerRatings, player, currentRating - eloChange, !team1Wins);
-    });
+    updatePlayerData(playerRatings, player1, newTeam1Elo, team1Wins);
+    updatePlayerData(playerRatings, player2, newTeam1Elo, team1Wins);
+    updatePlayerData(playerRatings, player3, newTeam2Elo, !team1Wins);
+    updatePlayerData(playerRatings, player4, newTeam2Elo, !team1Wins);
 
     savePlayerData(playerRatings);
 }
@@ -161,7 +155,7 @@ function updatePlayerList() {
         const winRate = data.matches > 0 ? 
             ((data.wins / data.matches) * 100).toFixed(1) : 0;
         
-        li.innerHTML = `
+        li.innerHTML = 
             <span class="rank">${index + 1}</span>
             <span class="name">${player}</span>
             <span class="elo">${Math.round(data.rating)}</span>
@@ -172,7 +166,7 @@ function updatePlayerList() {
                     <div class="win-rate-fill" style="width: ${winRate}%"></div>
                 </div>
             </div>
-        `;
+        ;
         
         playerList.appendChild(li);
     });
