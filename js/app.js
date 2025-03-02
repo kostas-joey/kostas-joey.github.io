@@ -12,36 +12,42 @@ let playerRatings = {};
 
 // Load initial player data
 async function init() {
-    playerRatings = await loadPlayerData() || {};
+    console.log("Initializing application...");
+    try {
+        playerRatings = await loadPlayerData() || {};
+        console.log("Loaded player data from Firestore:", playerRatings);
+    } catch (error) {
+        console.error("Error loading player data:", error);
+    }
     updatePlayerList();
     setupEventListeners();
-    toggleTeamInputs(); // Add this line
+    toggleTeamInputs();
     updatePlayersList();
 }
 
 function setupEventListeners() {
-    // Add player form submission
+    console.log("Setting up event listeners...");
     playerForm.addEventListener('submit', handleAddPlayer);
-    
-    // Team match toggle
     teamMatchCheckbox.addEventListener('change', toggleTeamInputs);
-    
-    // Log match button
     logMatchButton.addEventListener('click', handleLogMatch);
 }
 
 async function handleAddPlayer(event) {
     event.preventDefault();
-    
+
     const playerName = playerNameInput.value.trim();
     const playerRating = parseInt(playerRatingInput.value) || 1200;
 
+    console.log("Attempting to add player:", playerName, "with rating:", playerRating);
+
     if (!playerName) {
+        console.warn("Player name is empty.");
         alert('Please enter a player name');
         return;
     }
 
     if (playerName in playerRatings) {
+        console.warn("Player already exists:", playerName);
         alert('Player already exists');
         return;
     }
@@ -53,25 +59,30 @@ async function handleAddPlayer(event) {
         wins: 0, 
         losses: 0 
     };
-    
+
     try {
         await savePlayerData(playerRatings);
+        console.log("Player added successfully:", playerRatings[playerName]);
         updatePlayerList();
         
         // Clear form
         playerNameInput.value = '';
         playerRatingInput.value = '1200';
     } catch (error) {
-        console.error('Failed to save player:', error);
+        console.error("Failed to save player:", error);
         alert('Failed to add player');
     }
 }
 
 function handleLogMatch() {
+    console.log("Logging a new match...");
+
     const isTeamMatch = teamMatchCheckbox.checked;
+    console.log("Is this a team match?", isTeamMatch);
+
     const winner = document.querySelector('input[name="winner"]:checked')?.value;
-    
     if (!winner) {
+        console.warn("No winner selected.");
         alert('Please select a winner');
         return;
     }
@@ -83,15 +94,19 @@ function handleLogMatch() {
 
     if (isTeamMatch) {
         if (!player1 || !player2 || !player3 || !player4) {
+            console.warn("Not all players for the team match are filled.");
             alert('Please fill in all player fields');
             return;
         }
+        console.log(`Team match: ${player1} & ${player2} vs ${player3} & ${player4}, Winner: ${winner}`);
         updateTeamMatch(player1, player2, player3, player4, winner === 'team1');
     } else {
         if (!player1 || !player3) {
+            console.warn("Player fields missing for 1v1 match.");
             alert('Please fill in player 1 and player 2');
             return;
         }
+        console.log(`Single match: ${player1} vs ${player3}, Winner: ${winner}`);
         updateSingleMatch(player1, player3, winner === 'team1');
     }
 
@@ -99,11 +114,17 @@ function handleLogMatch() {
 }
 
 function updateTeamMatch(player1, player2, player3, player4, team1Wins) {
+    console.log("Updating team match...");
+    
     const team1Elo = (getPlayerRating(player1) + getPlayerRating(player2)) / 2;
     const team2Elo = (getPlayerRating(player3) + getPlayerRating(player4)) / 2;
 
+    console.log(`Current Team Elo Ratings: Team1 (${team1Elo}), Team2 (${team2Elo})`);
+
     const newTeam1Elo = calculateElo(team1Elo, team2Elo, team1Wins ? 1 : 0);
     const newTeam2Elo = calculateElo(team2Elo, team1Elo, team1Wins ? 0 : 1);
+
+    console.log(`New Team Elo Ratings: Team1 (${newTeam1Elo}), Team2 (${newTeam2Elo})`);
 
     updatePlayerData(playerRatings, player1, newTeam1Elo, team1Wins);
     updatePlayerData(playerRatings, player2, newTeam1Elo, team1Wins);
@@ -114,11 +135,17 @@ function updateTeamMatch(player1, player2, player3, player4, team1Wins) {
 }
 
 function updateSingleMatch(player1, player2, player1Wins) {
+    console.log("Updating single match...");
+
     const player1Elo = getPlayerRating(player1);
     const player2Elo = getPlayerRating(player2);
 
+    console.log(`Current Elo Ratings: ${player1} (${player1Elo}), ${player2} (${player2Elo})`);
+
     const newPlayer1Elo = calculateElo(player1Elo, player2Elo, player1Wins ? 1 : 0);
     const newPlayer2Elo = calculateElo(player2Elo, player1Elo, player1Wins ? 0 : 1);
+
+    console.log(`New Elo Ratings: ${player1} (${newPlayer1Elo}), ${player2} (${newPlayer2Elo})`);
 
     updatePlayerData(playerRatings, player1, newPlayer1Elo, player1Wins);
     updatePlayerData(playerRatings, player2, newPlayer2Elo, !player1Wins);
@@ -134,49 +161,45 @@ function toggleTeamInputs() {
     const teamPlayers = document.querySelectorAll('.team-player');
     const matchTypeLabel = document.querySelector('.match-type-label');
     const isTeamMatch = teamMatchCheckbox.checked;
-    
+
+    console.log("Toggling team inputs. Team match enabled?", isTeamMatch);
+
     teamPlayers.forEach(input => {
         input.style.display = isTeamMatch ? 'block' : 'none';
         input.querySelector('input').required = isTeamMatch;
     });
-    
+
     matchTypeLabel.textContent = isTeamMatch ? '2v2 Match' : '1v1 Match';
 }
 
 function updatePlayerList() {
-    const playerList = document.getElementById('player-list');
-    playerList.innerHTML = '';
+    console.log("Updating player list...");
     
-    const sortedPlayers = Object.entries(playerRatings)
-        .sort(([,a], [,b]) => b.rating - a.rating);
+    playerList.innerHTML = '';
+    const sortedPlayers = Object.entries(playerRatings).sort(([, a], [, b]) => b.rating - a.rating);
 
     sortedPlayers.forEach(([player, data], index) => {
-        const li = document.createElement('li');
-        const winRate = data.matches > 0 ? 
-            ((data.wins / data.matches) * 100).toFixed(1) : 0;
+        console.log(`Ranking ${index + 1}: ${player} - Elo: ${data.rating}`);
         
-        li.innerHTML = 
+        const li = document.createElement('li');
+        li.innerHTML = `
             <span class="rank">${index + 1}</span>
             <span class="name">${player}</span>
             <span class="elo">${Math.round(data.rating)}</span>
             <span class="stats">${data.wins}W - ${data.losses}L</span>
-            <div class="ratio">
-                <span>${winRate}%</span>
-                <div class="win-rate-bar">
-                    <div class="win-rate-fill" style="width: ${winRate}%"></div>
-                </div>
-            </div>
-        ;
-        
+        `;
         playerList.appendChild(li);
     });
 }
 
 function updatePlayersList() {
+    console.log("Updating player datalist...");
+
     const datalist = document.getElementById('players-list');
     datalist.innerHTML = '';
-    
+
     Object.keys(playerRatings).forEach(playerName => {
+        console.log("Adding player to list:", playerName);
         const option = document.createElement('option');
         option.value = playerName;
         datalist.appendChild(option);
