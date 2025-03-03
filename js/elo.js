@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
-import { getFirestore, collection, setDoc, getDocs, doc } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
+import { getFirestore, collection, setDoc, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCC6oO1N3jkcLbyX0q9NYqWbR-VoRtZ-fQ",
@@ -22,30 +22,36 @@ function calculateElo(playerRating, opponentRating, result) {
 }
 
 async function updatePlayerData(playerName, newRating, isWinner) {
-    // Initialize player if not already in the ratings
-    if (!playerRatings[playerName]) {
-        playerRatings[playerName] = {
-            rating: 1200,
-            matches: 0,
-            wins: 0,
-            losses: 0
+    try {
+        // Get current player data from Firestore
+        const playerRef = doc(db, "players", playerName);
+        const playerDoc = await getDoc(playerRef);
+        
+        if (!playerDoc.exists()) {
+            console.error(`Player ${playerName} not found in Firestore`);
+            return false;
+        }
+        
+        const playerData = playerDoc.data();
+        
+        // Update player data
+        const updatedData = {
+            ...playerData,
+            rating: newRating,
+            matches: (playerData.matches || 0) + 1,
+            wins: (playerData.wins || 0) + (isWinner ? 1 : 0),
+            losses: (playerData.losses || 0) + (isWinner ? 0 : 1)
         };
+        
+        // Save to Firestore
+        await setDoc(playerRef, updatedData);
+        console.log(`Updated player ${playerName}: new rating ${newRating}`);
+        return true;
+    } catch (error) {
+        console.error("Error updating player data:", error);
+        return false;
     }
-
-    // Update rating, match count, wins/losses
-    playerRatings[playerName].rating = newRating; // Ensure playerName is used as key
-    playerRatings[playerName].matches += 1;
-    
-    if (isWinner) {
-        playerRatings[playerName].wins += 1;
-    } else {
-        playerRatings[playerName].losses += 1;
-    }
-
-    // Save updated player data to Firestore
-    await savePlayerData(playerName, playerRatings[playerName]);
 }
-
 
 // Calculate average Elo for team
 function averageTeamElo(player1Rating, player2Rating) {

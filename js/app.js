@@ -1,5 +1,5 @@
 import { calculateElo, updatePlayerData, loadPlayerData, savePlayerData } from './elo.js';
-import { getFirestore, collection, getDocs, doc } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
 
 // Firebase Initialization (already imported in HTML)
 const db = getFirestore();
@@ -34,6 +34,22 @@ function setupEventListeners() {
     playerForm.addEventListener('submit', handleAddPlayer);
     teamMatchCheckbox.addEventListener('change', toggleTeamInputs);
     logMatchButton.addEventListener('click', handleLogMatch);
+    window.addEventListener('playerAdded', async () => {
+        playerRatings = await loadPlayerData();
+        updatePlayerList();
+        updatePlayersList();
+    });
+}
+
+async function getPlayerFromFirestore(playerName) {
+    try {
+        const docRef = doc(db, "players", playerName);
+        const docSnap = await getDoc(docRef);
+        return docSnap.exists() ? docSnap.data() : null;
+    } catch (error) {
+        console.error("Error getting player:", error);
+        return null;
+    }
 }
 
 async function handleAddPlayer(event) {
@@ -50,14 +66,21 @@ async function handleAddPlayer(event) {
         return;
     }
 
-    if (playerRatings[playerName]) {
-        console.warn("Player already exists:", playerName);
-        alert('Player already exists');
-        return;
+    // Check if player exists in Firestore
+    try {
+        const playerData = await getPlayerFromFirestore(playerName);
+        if (playerData) {
+            console.warn("Player already exists:", playerName);
+            alert('Player already exists');
+            return;
+        }
+    } catch (error) {
+        console.error("Error checking player existence:", error);
     }
 
     // Add new player
-    playerRatings[playerName] = { 
+    const newPlayer = { 
+        name: playerName,
         rating: playerRating, 
         matches: 0, 
         wins: 0, 
@@ -65,9 +88,15 @@ async function handleAddPlayer(event) {
     };
 
     try {
-        await savePlayerData(playerName, playerRatings[playerName]);
-        console.log("Player added successfully:", playerRatings[playerName]);
+        await savePlayerData(playerName, newPlayer);
+        console.log("Player added successfully:", newPlayer);
+        
+        // Reload player data to refresh our local cache
+        playerRatings = await loadPlayerData();
+        
+        // Update UI
         updatePlayerList();
+        updatePlayersList();
         
         // Clear form
         playerNameInput.value = '';
@@ -103,7 +132,7 @@ async function handleLogMatch() {
             return;
         }
         console.log(`Team match: ${player1} & ${player2} vs ${player3} & ${player4}, Winner: ${winner}`);
-        updateTeamMatch(player1, player2, player3, player4, winner === 'team1');
+        await updateTeamMatch(player1, player2, player3, player4, winner === 'team1');
     } else {
         if (!player1 || !player3) {
             console.warn("Player fields missing for 1v1 match.");
@@ -111,10 +140,15 @@ async function handleLogMatch() {
             return;
         }
         console.log(`Single match: ${player1} vs ${player3}, Winner: ${winner}`);
-        updateSingleMatch(player1, player3, winner === 'team1');
+        await updateSingleMatch(player1, player3, winner === 'team1');
     }
 
-    updatePlayerList();
+    // Clear form fields after logging match
+    document.getElementById('player1').value = '';
+    document.getElementById('player2').value = '';
+    document.getElementById('player3').value = '';
+    document.getElementById('player4').value = '';
+    document.querySelector('input[name="winner"]:checked').checked = false;
 }
 
 async function updateTeamMatch(player1, player2, player3, player4, team1Wins) {
@@ -135,7 +169,9 @@ async function updateTeamMatch(player1, player2, player3, player4, team1Wins) {
     await updatePlayerData(player3, newTeam2Elo, !team1Wins);
     await updatePlayerData(player4, newTeam2Elo, !team1Wins);
 
-    savePlayerData();
+    // Reload player data and update UI
+    playerRatings = await loadPlayerData();
+    updatePlayerList();
 }
 
 async function updateSingleMatch(player1, player2, player1Wins) {
@@ -154,11 +190,26 @@ async function updateSingleMatch(player1, player2, player1Wins) {
     await updatePlayerData(player1, newPlayer1Elo, player1Wins);
     await updatePlayerData(player2, newPlayer2Elo, !player1Wins);
 
-    savePlayerData();
+    // Reload player data and update UI
+    playerRatings = await loadPlayerData();
+    updatePlayerList();
 }
 
-function getPlayerRating(playerName) {
-    return playerRatings[playerName]?.rating || 1200;
+async function getPlayerRating(playerName) {
+    try {
+        const docRef = doc(db, "players", playerName);
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists()) {
+            return docSnap.data().rating || 1200;
+        } else {
+            console.warn(`Player ${playerName} not found, using default rating 1200`);
+            return 1200;
+        }
+    } catch (error) {
+        console.error("Error getting player rating:", error);
+        return 1200;
+    }
 }
 
 function toggleTeamInputs() {
@@ -180,23 +231,37 @@ async function updatePlayerList() {
     console.log("Updating player list...");
     
     playerList.innerHTML = '';
-    const playersSnapshot = await getDocs(collection(db, "players"));
-    const sortedPlayers = playersSnapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
-        .sort((a, b) => b.rating - a.rating);
-
-    sortedPlayers.forEach((data, index) => {
-        console.log(`Ranking ${index + 1}: ${data.name} - Elo: ${data.rating}`);
+    
+    try {
+        // Get latest player data from Firestore
+        const playersSnapshot = await getDocs(collection(db, "players"));
         
-        const li = document.createElement('li');
-        li.innerHTML = `
-            <span class="rank">${index + 1}</span>
-            <span class="name">${data.name}</span>
-            <span class="elo">${Math.round(data.rating)}</span>
-            <span class="stats">${data.wins}W - ${data.losses}L</span>
-        `;
-        playerList.appendChild(li);
-    });
+        // Map and sort players by rating
+        const sortedPlayers = playersSnapshot.docs
+            .map(doc => doc.data())
+            .sort((a, b) => b.rating - a.rating);
+            
+        // Create list items for each player
+        sortedPlayers.forEach((data, index) => {
+            console.log(`Ranking ${index + 1}: ${data.name} - Elo: ${data.rating}`);
+            
+            const li = document.createElement('li');
+            const winRate = data.matches > 0 
+                ? Math.round((data.wins / data.matches) * 100) 
+                : 0;
+                
+            li.innerHTML = `
+                <span class="rank">${index + 1}</span>
+                <span class="name">${data.name}</span>
+                <span class="elo">${Math.round(data.rating)}</span>
+                <span class="stats">${data.wins || 0}W - ${data.losses || 0}L</span>
+                <span class="ratio">${winRate}%</span>
+            `;
+            playerList.appendChild(li);
+        });
+    } catch (error) {
+        console.error("Error updating player list:", error);
+    }
 }
 
 async function updatePlayersList() {
@@ -213,9 +278,6 @@ async function updatePlayersList() {
         datalist.appendChild(option);
     });
 }
-
-
-
 
 // Initialize the application
 init();
