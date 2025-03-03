@@ -1,5 +1,5 @@
 import { calculateElo, updatePlayerData, loadPlayerData, savePlayerData } from './elo.js';
-import { getFirestore, collection, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
+import { getFirestore, collection, setDoc, getDocs, doc } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
 
 // Firebase Initialization (already imported in HTML)
 const db = getFirestore();
