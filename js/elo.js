@@ -24,41 +24,41 @@ const db = getFirestore(app);
      return playerRating + K * (result - expectedScore);
  }
  
-//  function updatePlayerData(playerRatings, playerName, newRating, isWinner) {
-//      if (!playerRatings[playerName]) {
-//          playerRatings[playerName] = {
-//              rating: 1200,
-//              matches: 0,
-//              wins: 0,
-//              losses: 0
-//          };
-//      }
+ function updatePlayerData(playerRatings, playerName, newRating, isWinner) {
+     if (!playerRatings[playerName]) {
+         playerRatings[playerName] = {
+             rating: 1200,
+             matches: 0,
+             wins: 0,
+             losses: 0
+         };
+     }
      
-//      playerRatings[playerName].rating = newRating;
-//      playerRatings[playerName].matches += 1;
+     playerRatings[playerName].rating = newRating;
+     playerRatings[playerName].matches += 1;
      
-//      if (isWinner) {
-//          playerRatings[playerName].wins += 1;
-//      } else {
-//          playerRatings[playerName].losses += 1;
-//      }
-//  }
+     if (isWinner) {
+         playerRatings[playerName].wins += 1;
+     } else {
+         playerRatings[playerName].losses += 1;
+     }
+ }
 
-async function updatePlayerData(playerRatings, playerName, newRating, isWinner) {
-    if (!playerRatings[playerName]) {
-        playerRatings[playerName] = { rating: 1200, matches: 0, wins: 0, losses: 0 };
-    }
+// async function updatePlayerData(playerRatings, playerName, newRating, isWinner) {
+//     if (!playerRatings[playerName]) {
+//         playerRatings[playerName] = { rating: 1200, matches: 0, wins: 0, losses: 0 };
+//     }
 
-    playerRatings[playerName].rating = newRating;
-    playerRatings[playerName].matches += 1;
-    if (isWinner) {
-        playerRatings[playerName].wins += 1;
-    } else {
-        playerRatings[playerName].losses += 1;
-    }
+//     playerRatings[playerName].rating = newRating;
+//     playerRatings[playerName].matches += 1;
+//     if (isWinner) {
+//         playerRatings[playerName].wins += 1;
+//     } else {
+//         playerRatings[playerName].losses += 1;
+//     }
 
-    await savePlayerData(playerRatings);  // Save updated data to Firebase
-}
+//     // await savePlayerData(playerRatings);  // Save updated data to Firebase
+// }
 
  
  function averageTeamElo(player1Rating, player2Rating) {
