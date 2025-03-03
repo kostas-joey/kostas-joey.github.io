@@ -44,7 +44,7 @@ async function updatePlayerData(playerRatings, playerName, newRating, isWinner) 
     }
 
     // Save updated player data to Firestore
-    await savePlayerData(playerRatings);
+    await savePlayerData(playerName, playerRatings[playerName]);
 }
 
 // Calculate average Elo for team
@@ -69,13 +69,11 @@ async function loadPlayerData() {
 }
 
 // Save player data to Firestore
-async function savePlayerData(playerData) {
+async function savePlayerData(playerName, playerData) {
     try {
-        for (const [playerName, data] of Object.entries(playerData)) {
-            // Use setDoc to create or update a player document
-            await setDoc(doc(db, "players", playerName), data);
-        }
-        console.log("Player data saved to Firebase.");
+        // Use setDoc to create or update a player document
+        await setDoc(doc(db, "players", playerName), playerData);
+        console.log(`Player data for ${playerName} saved to Firebase.`);
         return true;
     } catch (error) {
         console.error("Error saving player data:", error);

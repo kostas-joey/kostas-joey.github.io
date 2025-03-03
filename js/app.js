@@ -1,5 +1,5 @@
-import { calculateElo, updatePlayerData } from './elo.js';
-import { getFirestore, collection, addDoc, getDocs,  updateDoc, doc } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
+import { calculateElo, updatePlayerData, loadPlayerData, savePlayerData } from './elo.js';
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
 
 // Firebase Initialization (already imported in HTML)
 const db = getFirestore();
@@ -77,7 +77,6 @@ async function handleAddPlayer(event) {
         alert('Failed to add player');
     }
 }
-
 
 async function handleLogMatch() {
     console.log("Logging a new match...");
@@ -162,7 +161,6 @@ function getPlayerRating(playerName) {
     return playerRatings[playerName]?.rating || 1200;
 }
 
-
 function toggleTeamInputs() {
     const teamPlayers = document.querySelectorAll('.team-player');
     const matchTypeLabel = document.querySelector('.match-type-label');
@@ -238,7 +236,6 @@ async function savePlayerData(playerName, playerData) {
         throw new Error("Failed to save player data.");
     }
 }
-
 
 // Initialize the application
 init();
