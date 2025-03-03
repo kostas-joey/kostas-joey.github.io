@@ -1,5 +1,5 @@
-import { initializeApp } from "firebase/app";
-import { getFirestore, collection, doc, setDoc, getDoc, getDocs } from "firebase/firestore"; 
+import { initializeApp } from "node-modules/firebase/app";
+import { getFirestore, collection, doc, setDoc, getDoc, getDocs } from "node-modules/firebase/firestore"; 
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
