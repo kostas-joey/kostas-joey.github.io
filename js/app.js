@@ -78,6 +78,7 @@ async function handleAddPlayer(event) {
     }
 }
 
+
 async function handleLogMatch() {
     console.log("Logging a new match...");
 
@@ -216,18 +217,28 @@ async function updatePlayersList() {
 }
 
 // Save player data to Firestore
-async function savePlayerData() {
+async function savePlayerData(playerName, playerData) {
     const playersRef = collection(db, "players");
-    for (const playerName in playerRatings) {
-        const playerData = playerRatings[playerName];
-        const playerRef = doc(playersRef, playerName);
-        await updateDoc(playerRef, {
+
+    try {
+        // Create a new document with the player's name as the document ID
+        const playerDocRef = doc(playersRef, playerName);
+
+        // Set the document data with initial player values
+        await setDoc(playerDocRef, {
             rating: playerData.rating,
             wins: playerData.wins,
-            losses: playerData.losses
+            losses: playerData.losses,
+            matches: playerData.matches || 0  // Initialize matches field with 0
         });
+
+        console.log(`Player ${playerName} added successfully.`);
+    } catch (error) {
+        console.error("Error adding player data:", error);
+        throw new Error("Failed to save player data.");
     }
 }
+
 
 // Initialize the application
 init();

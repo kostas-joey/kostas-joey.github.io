@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
-import { getFirestore, collection, setDoc, addDoc, getDocs, updateDoc, doc } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
+import { getFirestore, collection, setDoc, getDocs, doc } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCC6oO1N3jkcLbyX0q9NYqWbR-VoRtZ-fQ",
@@ -8,77 +8,51 @@ const firebaseConfig = {
     storageBucket: "new-project-8e4ac.firebasestorage.app",
     messagingSenderId: "921717995613",
     appId: "1:921717995613:web:539ba4a30df006c944b5b4"
-  };
+};
 
-  // Initialize Firebase
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
- 
- // Initialize player ratings dictionary
- let playerRatings = {};
 
- // Elo rating calculation function
- function calculateElo(playerRating, opponentRating, result) {
-     const K = 32;
-     const expectedScore = 1 / (1 + Math.pow(10, (opponentRating - playerRating) / 400));
-     return playerRating + K * (result - expectedScore);
- }
- 
- function updatePlayerData(playerRatings, playerName, newRating, isWinner) {
-     if (!playerRatings[playerName]) {
-         playerRatings[playerName] = {
-             rating: 1200,
-             matches: 0,
-             wins: 0,
-             losses: 0
-         };
-     }
-     
-     playerRatings[playerName].rating = newRating;
-     playerRatings[playerName].matches += 1;
-     
-     if (isWinner) {
-         playerRatings[playerName].wins += 1;
-     } else {
-         playerRatings[playerName].losses += 1;
-     }
- }
+// Elo rating calculation function
+function calculateElo(playerRating, opponentRating, result) {
+    const K = 32;
+    const expectedScore = 1 / (1 + Math.pow(10, (opponentRating - playerRating) / 400));
+    return playerRating + K * (result - expectedScore);
+}
 
-// async function updatePlayerData(playerRatings, playerName, newRating, isWinner) {
-//     if (!playerRatings[playerName]) {
-//         playerRatings[playerName] = { rating: 1200, matches: 0, wins: 0, losses: 0 };
-//     }
+// Update player data
+async function updatePlayerData(playerRatings, playerName, newRating, isWinner) {
+    // Initialize player if not already in the ratings
+    if (!playerRatings[playerName]) {
+        playerRatings[playerName] = {
+            rating: 1200,
+            matches: 0,
+            wins: 0,
+            losses: 0
+        };
+    }
 
-//     playerRatings[playerName].rating = newRating;
-//     playerRatings[playerName].matches += 1;
-//     if (isWinner) {
-//         playerRatings[playerName].wins += 1;
-//     } else {
-//         playerRatings[playerName].losses += 1;
-//     }
+    // Update rating, match count, wins/losses
+    playerRatings[playerName].rating = newRating;
+    playerRatings[playerName].matches += 1;
+    
+    if (isWinner) {
+        playerRatings[playerName].wins += 1;
+    } else {
+        playerRatings[playerName].losses += 1;
+    }
 
-//     // await savePlayerData(playerRatings);  // Save updated data to Firebase
-// }
+    // Save updated player data to Firestore
+    await savePlayerData(playerRatings);
+}
 
- 
- function averageTeamElo(player1Rating, player2Rating) {
-     return (player1Rating + player2Rating) / 2;
- }
- 
- function getPlayerRatings() {
-     return playerRatings;
- }
- 
-//  async function loadPlayerData() {
-//      try {
-//          const data = localStorage.getItem('foosballPlayerData');
-//          return data ? JSON.parse(data) : {};
-//      } catch (error) {
-//          console.error('Error loading player data:', error);
-//          return {};
-//      }
-//  }
+// Calculate average Elo for team
+function averageTeamElo(player1Rating, player2Rating) {
+    return (player1Rating + player2Rating) / 2;
+}
 
+// Load player data from Firestore
 async function loadPlayerData() {
     try {
         const querySnapshot = await getDocs(collection(db, "players"));
@@ -94,19 +68,11 @@ async function loadPlayerData() {
     }
 }
 
-//
-//  async function savePlayerData(playerData) {
-//      try {
-//          localStorage.setItem('foosballPlayerData', JSON.stringify(playerData));
-//          return true;
-//      } catch (error) {
-//          console.error('Error saving player data:', error);
-//          return false;
-//      }
-//  }
+// Save player data to Firestore
 async function savePlayerData(playerData) {
     try {
         for (const [playerName, data] of Object.entries(playerData)) {
+            // Use setDoc to create or update a player document
             await setDoc(doc(db, "players", playerName), data);
         }
         console.log("Player data saved to Firebase.");
@@ -117,13 +83,11 @@ async function savePlayerData(playerData) {
     }
 }
 
- 
- // Export all functions
- export {
-     calculateElo,
-     updatePlayerData,
-     averageTeamElo,
-     getPlayerRatings,
-     loadPlayerData,
-     savePlayerData
- };
+// Export all functions
+export {
+    calculateElo,
+    updatePlayerData,
+    averageTeamElo,
+    loadPlayerData,
+    savePlayerData
+};
