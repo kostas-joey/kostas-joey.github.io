@@ -1,5 +1,5 @@
 import { calculateElo, updatePlayerData } from './elo.js';
-import { getFirestore, collection, addDoc, getDocs,getDoc,  updateDoc, doc } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs,  updateDoc, doc } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
 
 // Firebase Initialization (already imported in HTML)
 const db = getFirestore();
@@ -157,10 +157,10 @@ async function updateSingleMatch(player1, player2, player1Wins) {
     savePlayerData();
 }
 
-async function getPlayerRating(playerName) {
-    const playerDoc = await getDoc(doc(db, "players", playerName));
-    return playerDoc.exists() ? playerDoc.data().rating : 1200;
+function getPlayerRating(playerName) {
+    return playerRatings[playerName]?.rating || 1200;
 }
+
 
 function toggleTeamInputs() {
     const teamPlayers = document.querySelectorAll('.team-player');
