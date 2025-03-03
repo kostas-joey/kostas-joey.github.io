@@ -21,8 +21,7 @@ function calculateElo(playerRating, opponentRating, result) {
     return playerRating + K * (result - expectedScore);
 }
 
-// Update player data
-async function updatePlayerData(playerRatings, playerName, newRating, isWinner) {
+async function updatePlayerData(playerName, newRating, isWinner) {
     // Initialize player if not already in the ratings
     if (!playerRatings[playerName]) {
         playerRatings[playerName] = {
@@ -34,7 +33,7 @@ async function updatePlayerData(playerRatings, playerName, newRating, isWinner) 
     }
 
     // Update rating, match count, wins/losses
-    playerRatings[playerName].rating = newRating;
+    playerRatings[playerName].rating = newRating; // Ensure playerName is used as key
     playerRatings[playerName].matches += 1;
     
     if (isWinner) {
@@ -46,6 +45,7 @@ async function updatePlayerData(playerRatings, playerName, newRating, isWinner) 
     // Save updated player data to Firestore
     await savePlayerData(playerName, playerRatings[playerName]);
 }
+
 
 // Calculate average Elo for team
 function averageTeamElo(player1Rating, player2Rating) {
