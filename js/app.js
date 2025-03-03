@@ -1,5 +1,5 @@
 import { calculateElo, updatePlayerData, loadPlayerData, savePlayerData } from './elo.js';
-import { getFirestore, collection, setDoc, getDocs, doc } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
 
 // Firebase Initialization (already imported in HTML)
 const db = getFirestore();
@@ -214,28 +214,8 @@ async function updatePlayersList() {
     });
 }
 
-// Save player data to Firestore
-async function savePlayerData(playerName, playerData) {
-    const playersRef = collection(db, "players");
 
-    try {
-        // Create a new document with the player's name as the document ID
-        const playerDocRef = doc(playersRef, playerName);
 
-        // Set the document data with initial player values
-        await setDoc(playerDocRef, {
-            rating: playerData.rating,
-            wins: playerData.wins,
-            losses: playerData.losses,
-            matches: playerData.matches || 0  // Initialize matches field with 0
-        });
-
-        console.log(`Player ${playerName} added successfully.`);
-    } catch (error) {
-        console.error("Error adding player data:", error);
-        throw new Error("Failed to save player data.");
-    }
-}
 
 // Initialize the application
 init();
