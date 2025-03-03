@@ -1,7 +1,6 @@
-import { initializeApp } from "../node_modules/firebase/app";
-import { getFirestore, collection, doc, setDoc, getDoc, getDocs } from "../node_modules/firebase/firestore"; 
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, updateDoc, doc } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
 
-// Your web app's Firebase configuration
 const firebaseConfig = {
     apiKey: "AIzaSyCC6oO1N3jkcLbyX0q9NYqWbR-VoRtZ-fQ",
     authDomain: "new-project-8e4ac.firebaseapp.com",
@@ -10,9 +9,8 @@ const firebaseConfig = {
     messagingSenderId: "921717995613",
     appId: "1:921717995613:web:539ba4a30df006c944b5b4"
   };
-  
 
-// Initialize Firebase
+  // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
  

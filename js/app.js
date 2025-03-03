@@ -1,4 +1,8 @@
-import { calculateElo, updatePlayerData, loadPlayerData, savePlayerData } from './elo.js';
+import { calculateElo, updatePlayerData } from './elo.js';
+import { getFirestore, collection, addDoc, getDocs, updateDoc, doc } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
+
+// Firebase Initialization (already imported in HTML)
+const db = getFirestore();
 
 // DOM Elements
 const playerList = document.getElementById('player-list');
@@ -10,11 +14,11 @@ const logMatchButton = document.getElementById('log-match');
 
 let playerRatings = {};
 
-// Load initial player data
+// Load initial player data from Firestore
 async function init() {
     console.log("Initializing application...");
     try {
-        playerRatings = await loadPlayerData() || {};
+        playerRatings = await loadPlayerData();
         console.log("Loaded player data from Firestore:", playerRatings);
     } catch (error) {
         console.error("Error loading player data:", error);
@@ -46,7 +50,7 @@ async function handleAddPlayer(event) {
         return;
     }
 
-    if (playerName in playerRatings) {
+    if (playerRatings[playerName]) {
         console.warn("Player already exists:", playerName);
         alert('Player already exists');
         return;
@@ -61,7 +65,7 @@ async function handleAddPlayer(event) {
     };
 
     try {
-        await savePlayerData(playerRatings);
+        await savePlayerData(playerName, playerRatings[playerName]);
         console.log("Player added successfully:", playerRatings[playerName]);
         updatePlayerList();
         
@@ -74,7 +78,7 @@ async function handleAddPlayer(event) {
     }
 }
 
-function handleLogMatch() {
+async function handleLogMatch() {
     console.log("Logging a new match...");
 
     const isTeamMatch = teamMatchCheckbox.checked;
@@ -113,11 +117,11 @@ function handleLogMatch() {
     updatePlayerList();
 }
 
-function updateTeamMatch(player1, player2, player3, player4, team1Wins) {
+async function updateTeamMatch(player1, player2, player3, player4, team1Wins) {
     console.log("Updating team match...");
     
-    const team1Elo = (getPlayerRating(player1) + getPlayerRating(player2)) / 2;
-    const team2Elo = (getPlayerRating(player3) + getPlayerRating(player4)) / 2;
+    const team1Elo = (await getPlayerRating(player1) + await getPlayerRating(player2)) / 2;
+    const team2Elo = (await getPlayerRating(player3) + await getPlayerRating(player4)) / 2;
 
     console.log(`Current Team Elo Ratings: Team1 (${team1Elo}), Team2 (${team2Elo})`);
 
@@ -126,19 +130,19 @@ function updateTeamMatch(player1, player2, player3, player4, team1Wins) {
 
     console.log(`New Team Elo Ratings: Team1 (${newTeam1Elo}), Team2 (${newTeam2Elo})`);
 
-    updatePlayerData(playerRatings, player1, newTeam1Elo, team1Wins);
-    updatePlayerData(playerRatings, player2, newTeam1Elo, team1Wins);
-    updatePlayerData(playerRatings, player3, newTeam2Elo, !team1Wins);
-    updatePlayerData(playerRatings, player4, newTeam2Elo, !team1Wins);
+    await updatePlayerData(player1, newTeam1Elo, team1Wins);
+    await updatePlayerData(player2, newTeam1Elo, team1Wins);
+    await updatePlayerData(player3, newTeam2Elo, !team1Wins);
+    await updatePlayerData(player4, newTeam2Elo, !team1Wins);
 
-    savePlayerData(playerRatings);
+    savePlayerData();
 }
 
-function updateSingleMatch(player1, player2, player1Wins) {
+async function updateSingleMatch(player1, player2, player1Wins) {
     console.log("Updating single match...");
 
-    const player1Elo = getPlayerRating(player1);
-    const player2Elo = getPlayerRating(player2);
+    const player1Elo = await getPlayerRating(player1);
+    const player2Elo = await getPlayerRating(player2);
 
     console.log(`Current Elo Ratings: ${player1} (${player1Elo}), ${player2} (${player2Elo})`);
 
@@ -147,14 +151,15 @@ function updateSingleMatch(player1, player2, player1Wins) {
 
     console.log(`New Elo Ratings: ${player1} (${newPlayer1Elo}), ${player2} (${newPlayer2Elo})`);
 
-    updatePlayerData(playerRatings, player1, newPlayer1Elo, player1Wins);
-    updatePlayerData(playerRatings, player2, newPlayer2Elo, !player1Wins);
+    await updatePlayerData(player1, newPlayer1Elo, player1Wins);
+    await updatePlayerData(player2, newPlayer2Elo, !player1Wins);
 
-    savePlayerData(playerRatings);
+    savePlayerData();
 }
 
-function getPlayerRating(playerName) {
-    return playerRatings[playerName]?.rating || 1200;
+async function getPlayerRating(playerName) {
+    const playerDoc = await getDoc(doc(db, "players", playerName));
+    return playerDoc.exists() ? playerDoc.data().rating : 1200;
 }
 
 function toggleTeamInputs() {
@@ -172,19 +177,22 @@ function toggleTeamInputs() {
     matchTypeLabel.textContent = isTeamMatch ? '2v2 Match' : '1v1 Match';
 }
 
-function updatePlayerList() {
+async function updatePlayerList() {
     console.log("Updating player list...");
     
     playerList.innerHTML = '';
-    const sortedPlayers = Object.entries(playerRatings).sort(([, a], [, b]) => b.rating - a.rating);
+    const playersSnapshot = await getDocs(collection(db, "players"));
+    const sortedPlayers = playersSnapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .sort((a, b) => b.rating - a.rating);
 
-    sortedPlayers.forEach(([player, data], index) => {
-        console.log(`Ranking ${index + 1}: ${player} - Elo: ${data.rating}`);
+    sortedPlayers.forEach((data, index) => {
+        console.log(`Ranking ${index + 1}: ${data.name} - Elo: ${data.rating}`);
         
         const li = document.createElement('li');
         li.innerHTML = `
             <span class="rank">${index + 1}</span>
-            <span class="name">${player}</span>
+            <span class="name">${data.name}</span>
             <span class="elo">${Math.round(data.rating)}</span>
             <span class="stats">${data.wins}W - ${data.losses}L</span>
         `;
@@ -192,18 +200,33 @@ function updatePlayerList() {
     });
 }
 
-function updatePlayersList() {
+async function updatePlayersList() {
     console.log("Updating player datalist...");
 
     const datalist = document.getElementById('players-list');
     datalist.innerHTML = '';
 
-    Object.keys(playerRatings).forEach(playerName => {
-        console.log("Adding player to list:", playerName);
+    const playersSnapshot = await getDocs(collection(db, "players"));
+    playersSnapshot.docs.forEach(doc => {
+        console.log("Adding player to list:", doc.id);
         const option = document.createElement('option');
-        option.value = playerName;
+        option.value = doc.id;
         datalist.appendChild(option);
     });
+}
+
+// Save player data to Firestore
+async function savePlayerData() {
+    const playersRef = collection(db, "players");
+    for (const playerName in playerRatings) {
+        const playerData = playerRatings[playerName];
+        const playerRef = doc(playersRef, playerName);
+        await updateDoc(playerRef, {
+            rating: playerData.rating,
+            wins: playerData.wins,
+            losses: playerData.losses
+        });
+    }
 }
 
 // Initialize the application
