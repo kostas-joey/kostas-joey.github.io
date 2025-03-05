@@ -82,21 +82,46 @@
 
         <!-- Player List -->
         <div class="player-rankings">
-            <h2>Player Rankings</h2>
-            <div class="rankings-container">
-                <div class="rankings-header">
-                    <span class="rank">#</span>
-                    <span class="name">Player</span>
-                    <span class="elo">ELO</span>
-                    <span class="stats">W/L</span>
-                    <span class="ratio">Win Rate</span>
+            <div class="rankings-tabs">
+                <button class="tab-button active" data-tab="elo">ELO Rankings</button>
+                <button class="tab-button" data-tab="winrate">Winrate Rankings</button>
+            </div>
+            
+            <!-- ELO Rankings -->
+            <div class="rankings-section" id="elo-rankings">
+                <h2>ELO Rankings</h2>
+                <div class="rankings-container">
+                    <div class="rankings-header">
+                        <span class="rank">#</span>
+                        <span class="name">Player</span>
+                        <span class="elo">ELO</span>
+                        <span class="stats">W/L</span>
+                        <span class="ratio">Win Rate</span>
+                    </div>
+                    <ul id="elo-player-list"></ul>
                 </div>
-                <ul id="player-list"></ul>
+            </div>
+
+            <!-- Winrate Rankings -->
+            <div class="rankings-section" id="winrate-rankings" style="display: none;">
+                <h2>Winrate Rankings</h2>
+                <div class="rankings-container">
+                    <div class="rankings-header">
+                        <span class="rank">#</span>
+                        <span class="name">Player</span>
+                        <span class="ratio">Win Rate</span>
+                        <span class="stats">W/L</span>
+                        <span class="elo">ELO</span>
+                    </div>
+                    <ul id="winrate-player-list"></ul>
+                </div>
             </div>
         </div>
     </div>
     
     <!-- Firebase CDN -->
     <script type="module" src="js/app.js"></script>
+    <div id="victory-announcement" class="victory-announcement"></div>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
 </body>
 </html>
