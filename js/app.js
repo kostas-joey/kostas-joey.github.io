@@ -133,6 +133,9 @@ async function handleLogMatch() {
         }
         console.log(`Team match: ${player1} & ${player2} vs ${player3} & ${player4}, Winner: ${winner}`);
         await updateTeamMatch(player1, player2, player3, player4, winner === 'team1');
+        // Add victory animation
+        const winners = winner === 'team1' ? `${player1} & ${player2}` : `${player3} & ${player4}`;
+        showVictoryAnimation(winners);
     } else {
         if (!player1 || !player3) {
             console.warn("Player fields missing for 1v1 match.");
@@ -141,6 +144,9 @@ async function handleLogMatch() {
         }
         console.log(`Single match: ${player1} vs ${player3}, Winner: ${winner}`);
         await updateSingleMatch(player1, player3, winner === 'team1');
+        // Add victory animation
+        const winners = winner === 'team1' ? player1 : player3;
+        showVictoryAnimation(winners);
     }
 
     // Clear form fields after logging match
@@ -277,6 +283,76 @@ async function updatePlayersList() {
         option.value = doc.id;
         datalist.appendChild(option);
     });
+}
+
+// Add this to your app.js file
+document.querySelectorAll('.tab-button').forEach(button => {
+    button.addEventListener('click', () => {
+        // Update active tab
+        document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+
+        // Show corresponding rankings
+        const tabType = button.dataset.tab;
+        document.querySelectorAll('.rankings-section').forEach(section => {
+            section.style.display = 'none';
+        });
+        document.getElementById(`${tabType}-rankings`).style.display = 'block';
+
+        // Update rankings based on the selected tab
+        if (tabType === 'elo') {
+            displayEloRankings();
+        } else {
+            displayWinrateRankings();
+        }
+    });
+});
+
+function displayEloRankings() {
+    // Sort players by ELO and display in #elo-player-list
+    // ...existing ranking logic...
+}
+
+function displayWinrateRankings() {
+    // Sort players by winrate and display in #winrate-player-list
+    // Similar to ELO rankings but sort by wins/total games
+    // ...
+}
+
+// Add this function after your existing functions
+function showVictoryAnimation(winners) {
+    // Create victory message
+    const announcement = document.getElementById('victory-announcement');
+    announcement.textContent = `🏆 ${winners} Wins! 🏆`;
+    announcement.style.display = 'block';
+
+    // Trigger confetti
+    confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+    });
+
+    // Create more confetti after a small delay
+    setTimeout(() => {
+        confetti({
+            particleCount: 50,
+            angle: 60,
+            spread: 55,
+            origin: { x: 0 }
+        });
+        confetti({
+            particleCount: 50,
+            angle: 120,
+            spread: 55,
+            origin: { x: 1 }
+        });
+    }, 250);
+
+    // Hide announcement after animation
+    setTimeout(() => {
+        announcement.style.display = 'none';
+    }, 3000);
 }
 
 // Initialize the application
