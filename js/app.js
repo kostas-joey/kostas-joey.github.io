@@ -393,22 +393,34 @@ document.addEventListener('change', function(event) {
     }
 });
 
-// Replace the multiple event listeners with a single initialization
-document.addEventListener('DOMContentLoaded', async () => {
-    console.log("DOM loaded, initializing application...");
-    try {
-        await Promise.all([
-            loadPlayerData().then(data => {
-                playerRatings = data;
-                console.log("Loaded player data from Firestore:", playerRatings);
-            }),
-            updatePlayersList()
-        ]);
-        
-        updatePlayerList();
-        setupEventListeners();
-        
-    } catch (error) {
-        console.error("Error during initialization:", error);
+// Password protection
+const CORRECT_PASSWORD = 'balldontlie'; // Change this to your desired password
+
+function checkPassword() {
+    const password = document.getElementById('passwordInput').value;
+    if (password === CORRECT_PASSWORD) {
+        document.getElementById('loginOverlay').classList.add('hidden');
+        localStorage.setItem('foosballAuthenticated', 'true');
+        init(); // Initialize the app
+    } else {
+        alert('Incorrect password');
     }
+}
+
+// Check if already authenticated
+function checkAuthentication() {
+    const isAuthenticated = localStorage.getItem('foosballAuthenticated') === 'true';
+    if (isAuthenticated) {
+        document.getElementById('loginOverlay').classList.add('hidden');
+        init(); // Initialize the app
+    }
+}
+
+// Modify the DOMContentLoaded event listener
+document.addEventListener('DOMContentLoaded', () => {
+    console.log("DOM loaded, checking authentication...");
+    checkAuthentication();
 });
+
+// Add to window object for onclick access
+window.checkPassword = checkPassword;
