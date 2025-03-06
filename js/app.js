@@ -410,20 +410,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         updatePlayerList();
         setupEventListeners();
         
-        // Set up log-match button listener
-        document.getElementById('log-match').addEventListener('click', async function() {
-            const player1 = document.getElementById('player1').value;
-            const player2 = document.getElementById('player2').value;
-            const player3 = document.getElementById('player3').value;
-            const player4 = document.getElementById('player4').value;
-            
-            if (!player1 || !player2 || !player3 || !player4) {
-                alert('Please select all players for both teams');
-                return;
-            }
-
-            await handleLogMatch();
-        });
     } catch (error) {
         console.error("Error during initialization:", error);
     }
