@@ -189,7 +189,6 @@ async function handleLogMatch() {
     const checkedRadio = document.querySelector('input[name="winner"]:checked');
     if (checkedRadio) checkedRadio.checked = false;
 
-    await updatePlayersList();
 }
 
 async function updateTeamMatch(player1, player2, player3, player4, team1Wins) {
@@ -230,7 +229,7 @@ async function updateTeamMatch(player1, player2, player3, player4, team1Wins) {
     ]);
 
     // Reload player data and update UI
-    playerRatings = await loadPlayerData();
+    await updatePlayersList();
     await updatePlayerList();
 }
 
