@@ -9,7 +9,6 @@ const playerList = document.getElementById('player-list');
 const playerForm = document.getElementById('player-form');
 const playerNameInput = document.getElementById('player-name');
 const playerRatingInput = document.getElementById('player-rating');
-//const teamMatchCheckbox = document.getElementById('team-match');
 const logMatchButton = document.getElementById('log-match');
 
 let playerRatings = {};
@@ -139,7 +138,7 @@ function celebrateVictory(winners) {
     }, 3000);
 }
 
-// Modify handleLogMatch to include celebration
+// Modified handleLogMatch to ensure data consistency
 async function handleLogMatch() {
     console.log("Logging a new match...");
 
@@ -174,22 +173,35 @@ async function handleLogMatch() {
             document.getElementById('player4').options[document.getElementById('player4').selectedIndex].text
         ];
 
-    await updateTeamMatch(player1, player2, player3, player4, team1Wins);
+    try {
+        // Update the match in Firestore
+        await updateTeamMatch(player1, player2, player3, player4, team1Wins);
+        
+        // Reload player data directly from Firestore to ensure consistency
+        playerRatings = await loadPlayerData();
+        
+        // Update UI with freshly loaded data from Firestore
+        await updatePlayerList();
+        
+        // Celebrate victory
+        celebrateVictory(winners);
     
-    // Celebrate victory
-    celebrateVictory(winners);
-
-    // Reset form safely
-    ['player1', 'player2', 'player3', 'player4'].forEach(id => {
-        const select = document.getElementById(id);
-        if (select) select.value = '';
-    });
-
-    // Uncheck winner radio button safely
-    const checkedRadio = document.querySelector('input[name="winner"]:checked');
-    if (checkedRadio) checkedRadio.checked = false;
-
-    await updatePlayersList();
+        // Reset form safely
+        ['player1', 'player2', 'player3', 'player4'].forEach(id => {
+            const select = document.getElementById(id);
+            if (select) select.value = '';
+        });
+    
+        // Uncheck winner radio button safely
+        const checkedRadio = document.querySelector('input[name="winner"]:checked');
+        if (checkedRadio) checkedRadio.checked = false;
+    
+        // Update player select dropdowns with fresh data
+        await updatePlayersList();
+    } catch (error) {
+        console.error("Error logging match:", error);
+        alert("Failed to log match. Please try again.");
+    }
 }
 
 async function updateTeamMatch(player1, player2, player3, player4, team1Wins) {
@@ -221,17 +233,13 @@ async function updateTeamMatch(player1, player2, player3, player4, team1Wins) {
         [player4]: newPlayer4Rating
     });
 
-    // Update player data
+    // Update player data in Firestore
     await Promise.all([
         updatePlayerData(player1, newPlayer1Rating, team1Wins),
         updatePlayerData(player2, newPlayer2Rating, team1Wins),
         updatePlayerData(player3, newPlayer3Rating, !team1Wins),
         updatePlayerData(player4, newPlayer4Rating, !team1Wins)
     ]);
-
-    // Reload player data and update UI
-    playerRatings = await loadPlayerData();
-    await updatePlayerList();
 }
 
 async function updateSingleMatch(player1, player2, player1Wins) {
@@ -272,54 +280,46 @@ async function getPlayerRating(playerName) {
     }
 }
 
-/*function toggleTeamInputs() {
-    const teamPlayers = document.querySelectorAll('.team-player');
-    const matchTypeLabel = document.querySelector('.match-type-label');
-    const isTeamMatch = teamMatchCheckbox.checked;
-
-    console.log("Toggling team inputs. Team match enabled?", isTeamMatch);
-
-    teamPlayers.forEach(input => {
-        input.style.display = isTeamMatch ? 'block' : 'none';
-        input.querySelector('input').required = isTeamMatch;
-    });
-
-    matchTypeLabel.textContent = isTeamMatch ? '2v2 Match' : '1v1 Match';
-} */
-
+// Completely rewritten updatePlayerList function to fix the duplication issue
 async function updatePlayerList() {
     console.log("Updating player list...");
     
     playerList.innerHTML = '';
     
     try {
-        // Get latest player data from Firestore
+        // Get the latest player data directly from Firestore
         const playersSnapshot = await getDocs(collection(db, "players"));
         
-               // Map and sort players by weighted Elo
-               const sortedPlayers = playersSnapshot.docs
-               .map(doc => {
-                   const data = doc.data();
-                   const totalMatches = (data.matches || 0);
-                   const wins = (data.wins || 0);
-                   
-                   // Calculate win rate and weighted Elo
-                   const winRate = totalMatches > 0 ? wins / totalMatches : 0;
-                   const weightedElo = data.rating * winRate; // Simple multiplication of Elo with win rate
-                   
-                   return {
-                       id: doc.id,
-                       name: data.name,
-                       rating: data.rating,
-                       matches: totalMatches,
-                       wins: wins,
-                       losses: (data.losses || 0),
-                       weightedElo: weightedElo
-                   };
-               })
-               .sort((a, b) => b.weightedElo - a.weightedElo);
-            
-            
+        // Create a map of player data by ID to prevent duplicates
+        const playerMap = new Map();
+        
+        playersSnapshot.docs.forEach(doc => {
+            const data = doc.data();
+            playerMap.set(doc.id, {
+                id: doc.id,
+                name: data.name,
+                rating: data.rating || 1200,
+                matches: data.matches || 0,
+                wins: data.wins || 0,
+                losses: data.losses || 0
+            });
+        });
+        
+        // Convert map to array and calculate weighted Elo
+        const sortedPlayers = Array.from(playerMap.values())
+            .map(player => {
+                const totalMatches = player.matches;
+                const wins = player.wins;
+                const winRate = totalMatches > 0 ? wins / totalMatches : 0;
+                const weightedElo = player.rating * winRate;
+                
+                return {
+                    ...player,
+                    weightedElo: weightedElo
+                };
+            })
+            .sort((a, b) => b.weightedElo - a.weightedElo);
+        
         // Create list items for each player
         sortedPlayers.forEach((data, index) => {
             const winRate = data.matches > 0 
@@ -343,7 +343,7 @@ async function updatePlayerList() {
     }
 }
 
-// Replace updatePlayersList function with this new version
+// Improved updatePlayersList function
 async function updatePlayersList() {
     console.log("Updating player selects...");
 
@@ -353,14 +353,24 @@ async function updatePlayersList() {
 
     try {
         const playersSnapshot = await getDocs(collection(db, "players"));
-        const players = playersSnapshot.docs.map(doc => ({
-            id: doc.id,
-            name: doc.data().name
-        }));
+        
+        // Create a map of players to prevent duplicates
+        const playerMap = new Map();
+        
+        playersSnapshot.docs.forEach(doc => {
+            playerMap.set(doc.id, {
+                id: doc.id,
+                name: doc.data().name
+            });
+        });
+        
+        // Convert to array
+        const players = Array.from(playerMap.values());
 
         // Update each select element
         selects.forEach(select => {
             // Keep the first "Select Player" option
+            const currentValue = select.value;
             select.innerHTML = '<option value="">Select Player</option>';
             
             // Add player options
@@ -370,28 +380,45 @@ async function updatePlayersList() {
                 option.textContent = player.name;
                 select.appendChild(option);
             });
+            
+            // Restore selected value if possible
+            if (currentValue && playerMap.has(currentValue)) {
+                select.value = currentValue;
+            }
         });
+        
+        // Re-apply disabled state for already selected players
+        applyPlayerSelectRestrictions();
     } catch (error) {
         console.error("Error updating player selects:", error);
     }
 }
 
+// New function to apply select restrictions
+function applyPlayerSelectRestrictions() {
+    const selects = ['player1', 'player2', 'player3', 'player4'].map(id => 
+        document.getElementById(id)
+    );
+    
+    // Get all selected values
+    const selectedValues = selects.map(select => select.value).filter(value => value !== "");
+    
+    // Disable options that are already selected in other dropdowns
+    selects.forEach(select => {
+        Array.from(select.options).forEach(option => {
+            if (option.value !== "" && selectedValues.includes(option.value) && option.value !== select.value) {
+                option.disabled = true;
+            } else {
+                option.disabled = false;
+            }
+        });
+    });
+}
+
 // Add validation to prevent selecting the same player multiple times
 document.addEventListener('change', function(event) {
     if (['player1', 'player2', 'player3', 'player4'].includes(event.target.id)) {
-        const selectedValue = event.target.value;
-        if (selectedValue) {
-            const allSelects = ['player1', 'player2', 'player3', 'player4']
-                .map(id => document.getElementById(id));
-                
-            allSelects.forEach(select => {
-                if (select.id !== event.target.id) {
-                    Array.from(select.options).forEach(option => {
-                        option.disabled = option.value === selectedValue;
-                    });
-                }
-            });
-        }
+        applyPlayerSelectRestrictions();
     }
 });
 
@@ -407,23 +434,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             updatePlayersList()
         ]);
         
-        updatePlayerList();
+        await updatePlayerList();
         setupEventListeners();
-        
-        // Set up log-match button listener
-        document.getElementById('log-match').addEventListener('click', async function() {
-            const player1 = document.getElementById('player1').value;
-            const player2 = document.getElementById('player2').value;
-            const player3 = document.getElementById('player3').value;
-            const player4 = document.getElementById('player4').value;
-            
-            if (!player1 || !player2 || !player3 || !player4) {
-                alert('Please select all players for both teams');
-                return;
-            }
-
-            await handleLogMatch();
-        });
     } catch (error) {
         console.error("Error during initialization:", error);
     }
