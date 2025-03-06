@@ -1,5 +1,22 @@
-import { calculateElo, updatePlayerData, loadPlayerData, savePlayerData } from './elo.js';
-import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
+import { 
+    calculateElo, 
+    updatePlayerData, 
+    loadPlayerData, 
+    savePlayerData,
+    saveMatchHistory 
+} from './elo.js';
+import { 
+    getFirestore, 
+    collection, 
+    getDocs, 
+    doc, 
+    getDoc,
+    query,
+    orderBy,
+    limit,
+    serverTimestamp,
+    addDoc 
+} from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
 
 // Firebase Initialization (already imported in HTML)
 const db = getFirestore();
@@ -23,7 +40,8 @@ async function init() {
                 playerRatings = data;
                 console.log("Loaded player data from Firestore:", playerRatings);
             }),
-            updatePlayersList() // Make sure player lists are populated
+            updatePlayersList(),
+            displayRecentMatches() // Add this line
         ]);
         
         updatePlayerList();
@@ -173,7 +191,42 @@ async function handleLogMatch() {
             document.getElementById('player4').options[document.getElementById('player4').selectedIndex].text
         ];
 
+    const team1Players = [player1, player2];
+    const team2Players = [player3, player4];
+    
+    // Get initial ratings
+    const initialRatings = {
+        [player1]: await getPlayerRating(player1),
+        [player2]: await getPlayerRating(player2),
+        [player3]: await getPlayerRating(player3),
+        [player4]: await getPlayerRating(player4)
+    };
+
     await updateTeamMatch(player1, player2, player3, player4, team1Wins);
+
+    // Calculate elo changes
+    const finalRatings = {
+        [player1]: await getPlayerRating(player1),
+        [player2]: await getPlayerRating(player2),
+        [player3]: await getPlayerRating(player3),
+        [player4]: await getPlayerRating(player4)
+    };
+
+    const eloChanges = Object.entries(finalRatings).map(([player, rating]) => ({
+        player,
+        change: rating - initialRatings[player]
+    }));
+
+    // Save match history
+    await saveMatchHistory({
+        team1Players,
+        team2Players,
+        team1Wins,
+        eloChanges
+    });
+
+    // Update recent matches display
+    await displayRecentMatches();
     
     // Celebrate victory
     celebrateVictory(winners);
@@ -424,3 +477,48 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Add to window object for onclick access
 window.checkPassword = checkPassword;
+
+// Add function to display match history
+async function displayRecentMatches() {
+    try {
+        const matchesRef = collection(db, "matches");
+        const q = query(matchesRef, orderBy("timestamp", "desc"), limit(10));
+        const querySnapshot = await getDocs(q);
+        
+        const matchesList = document.getElementById('matches-list');
+        matchesList.innerHTML = '';
+        
+        querySnapshot.forEach((doc) => {
+            const match = doc.data();
+            const date = match.timestamp.toDate();
+            
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <div class="match-result">
+                    <div class="match-teams">
+                        <span class="${match.team1Wins ? 'match-winner' : 'match-loser'}">
+                            ${match.team1Players.join(' & ')}
+                        </span>
+                        vs
+                        <span class="${match.team1Wins ? 'match-loser' : 'match-winner'}">
+                            ${match.team2Players.join(' & ')}
+                        </span>
+                    </div>
+                    <div class="match-meta">
+                        ${date.toLocaleString()}
+                    </div>
+                </div>
+                <div class="elo-changes">
+                    ${match.eloChanges.map(change => 
+                        `<span class="elo-change ${change.change > 0 ? 'elo-positive' : 'elo-negative'}">
+                            ${change.player}: ${change.change > 0 ? '+' : ''}${Math.round(change.change)}
+                        </span>`
+                    ).join(' ')}
+                </div>
+            `;
+            matchesList.appendChild(li);
+        });
+    } catch (error) {
+        console.error("Error displaying match history:", error);
+    }
+}

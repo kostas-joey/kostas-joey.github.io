@@ -416,3 +416,63 @@ input:checked + .slider:before {
 .hidden {
     display: none !important;
 }
+
+.recent-matches {
+    background: #fff;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin: 2rem 0;
+}
+
+.matches-container {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+#matches-list {
+    list-style: none;
+    padding: 0;
+}
+
+#matches-list li {
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.match-result {
+    flex: 1;
+}
+
+.match-teams {
+    font-weight: bold;
+}
+
+.match-winner {
+    color: #4CAF50;
+}
+
+.match-loser {
+    color: #f44336;
+}
+
+.match-meta {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.elo-change {
+    font-weight: bold;
+    margin-left: 1rem;
+}
+
+.elo-positive {
+    color: #4CAF50;
+}
+
+.elo-negative {
+    color: #f44336;
+}

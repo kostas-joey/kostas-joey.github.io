@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
-import { getFirestore, collection, setDoc, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
+import { getFirestore, collection, setDoc, getDocs, doc, getDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCC6oO1N3jkcLbyX0q9NYqWbR-VoRtZ-fQ",
@@ -174,6 +174,22 @@ async function processTeamMatch(team1Players, team2Players, team1Wins) {
     }
 }
 
+// Save match history to Firestore
+async function saveMatchHistory(match) {
+    try {
+        const matchesRef = collection(db, "matches");
+        await addDoc(matchesRef, {
+            ...match,
+            timestamp: serverTimestamp()
+        });
+        console.log("Match history saved successfully");
+        return true;
+    } catch (error) {
+        console.error("Error saving match history:", error);
+        return false;
+    }
+}
+
 // Export all functions
 export {
     calculateElo,
@@ -183,5 +199,6 @@ export {
     savePlayerData,
     calculateWeightedElo,  // Add the new function to exports
     processTeamMatch,
-    calculateTeamElo
+    calculateTeamElo,
+    saveMatchHistory
 };
