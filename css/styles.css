@@ -119,18 +119,11 @@ footer {
 }
 
 /* Toggle Switch */
-.switch {
+/* .switch {
     position: relative;
     display: inline-block;
     width: 60px;
     height: 34px;
-    margin-right: 1rem;
-}
-
-.switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
 }
 
 .slider {
@@ -167,7 +160,7 @@ input:checked + .slider:before {
 
 .match-type-label {
     font-weight: 500;
-}
+} */
 
 /* Teams Container */
 .teams-container {
@@ -198,6 +191,8 @@ input:checked + .slider:before {
 
 .player-input {
     margin-bottom: 1rem;
+    display: block !important;
+    opacity: 1 !important;
 }
 
 .player-input label {
@@ -212,6 +207,27 @@ input:checked + .slider:before {
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 1rem;
+}
+
+/* Style the select elements */
+.player-input select {
+    width: 100%;
+    padding: 8px;
+    margin: 5px 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.player-input select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+}
+
+.player-input select option:disabled {
+    color: #999;
+    background-color: #f5f5f5;
 }
 
 .radio-group {
@@ -332,4 +348,34 @@ input:checked + .slider:before {
     height: 100%;
     background: #3498db;
     transition: width 0.3s ease;
+}
+
+.victory-message {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: gold;
+    padding: 2rem;
+    border-radius: 1rem;
+    text-align: center;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    pointer-events: none;
+}
+
+.victory-message.show {
+    opacity: 1;
+}
+
+.victory-message h2 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+}
+
+.victory-message p {
+    font-size: 1.5rem;
 }

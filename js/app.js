@@ -9,7 +9,7 @@ const playerList = document.getElementById('player-list');
 const playerForm = document.getElementById('player-form');
 const playerNameInput = document.getElementById('player-name');
 const playerRatingInput = document.getElementById('player-rating');
-const teamMatchCheckbox = document.getElementById('team-match');
+//const teamMatchCheckbox = document.getElementById('team-match');
 const logMatchButton = document.getElementById('log-match');
 
 let playerRatings = {};
@@ -18,26 +18,38 @@ let playerRatings = {};
 async function init() {
     console.log("Initializing application...");
     try {
-        playerRatings = await loadPlayerData();
-        console.log("Loaded player data from Firestore:", playerRatings);
+        await Promise.all([
+            loadPlayerData().then(data => {
+                playerRatings = data;
+                console.log("Loaded player data from Firestore:", playerRatings);
+            }),
+            updatePlayersList() // Make sure player lists are populated
+        ]);
+        
+        updatePlayerList();
+        setupEventListeners();
     } catch (error) {
-        console.error("Error loading player data:", error);
+        console.error("Error during initialization:", error);
     }
-    updatePlayerList();
-    setupEventListeners();
-    toggleTeamInputs();
-    updatePlayersList();
 }
 
+// Modify the event listener setup to ensure proper loading sequence
 function setupEventListeners() {
     console.log("Setting up event listeners...");
+    
+    // Add player form submission
     playerForm.addEventListener('submit', handleAddPlayer);
-    teamMatchCheckbox.addEventListener('change', toggleTeamInputs);
+    
+    // Log match button
     logMatchButton.addEventListener('click', handleLogMatch);
+    
+    // Update both lists when a new player is added
     window.addEventListener('playerAdded', async () => {
         playerRatings = await loadPlayerData();
-        updatePlayerList();
-        updatePlayersList();
+        Promise.all([
+            updatePlayerList(),
+            updatePlayersList()
+        ]);
     });
 }
 
@@ -107,13 +119,31 @@ async function handleAddPlayer(event) {
     }
 }
 
+function celebrateVictory(winners) {
+    // Show victory message
+    const victoryMessage = document.getElementById('victoryMessage');
+    const winnersText = document.getElementById('winners');
+    winnersText.textContent = `${winners.join(' & ')} win!`;
+    victoryMessage.classList.add('show');
+
+    // Trigger confetti
+    confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+    });
+
+    // Hide message after 3 seconds
+    setTimeout(() => {
+        victoryMessage.classList.remove('show');
+    }, 3000);
+}
+
+// Modify handleLogMatch to include celebration
 async function handleLogMatch() {
     console.log("Logging a new match...");
 
-    const isTeamMatch = teamMatchCheckbox.checked;
-    console.log("Is this a team match?", isTeamMatch);
-
-    const winner = document.querySelector('input[name="winner"]:checked')?.value;
+    const winner = document.querySelector('input[name="winner"]:checked');
     if (!winner) {
         console.warn("No winner selected.");
         alert('Please select a winner');
@@ -125,53 +155,83 @@ async function handleLogMatch() {
     const player3 = document.getElementById('player3').value.trim();
     const player4 = document.getElementById('player4').value.trim();
 
-    if (isTeamMatch) {
-        if (!player1 || !player2 || !player3 || !player4) {
-            console.warn("Not all players for the team match are filled.");
-            alert('Please fill in all player fields');
-            return;
-        }
-        console.log(`Team match: ${player1} & ${player2} vs ${player3} & ${player4}, Winner: ${winner}`);
-        await updateTeamMatch(player1, player2, player3, player4, winner === 'team1');
-    } else {
-        if (!player1 || !player3) {
-            console.warn("Player fields missing for 1v1 match.");
-            alert('Please fill in player 1 and player 2');
-            return;
-        }
-        console.log(`Single match: ${player1} vs ${player3}, Winner: ${winner}`);
-        await updateSingleMatch(player1, player3, winner === 'team1');
+    if (!player1 || !player2 || !player3 || !player4) {
+        console.warn("Not all players selected");
+        alert('Please select all players');
+        return;
     }
 
-    // Clear form fields after logging match
-    document.getElementById('player1').value = '';
-    document.getElementById('player2').value = '';
-    document.getElementById('player3').value = '';
-    document.getElementById('player4').value = '';
-    document.querySelector('input[name="winner"]:checked').checked = false;
+    const team1Wins = winner.value === 'team1';
+    
+    // Get winning players
+    const winners = team1Wins ? 
+        [
+            document.getElementById('player1').options[document.getElementById('player1').selectedIndex].text,
+            document.getElementById('player2').options[document.getElementById('player2').selectedIndex].text
+        ] : 
+        [
+            document.getElementById('player3').options[document.getElementById('player3').selectedIndex].text,
+            document.getElementById('player4').options[document.getElementById('player4').selectedIndex].text
+        ];
+
+    await updateTeamMatch(player1, player2, player3, player4, team1Wins);
+    
+    // Celebrate victory
+    celebrateVictory(winners);
+
+    // Reset form safely
+    ['player1', 'player2', 'player3', 'player4'].forEach(id => {
+        const select = document.getElementById(id);
+        if (select) select.value = '';
+    });
+
+    // Uncheck winner radio button safely
+    const checkedRadio = document.querySelector('input[name="winner"]:checked');
+    if (checkedRadio) checkedRadio.checked = false;
+
+    await updatePlayersList();
 }
 
 async function updateTeamMatch(player1, player2, player3, player4, team1Wins) {
     console.log("Updating team match...");
     
-    const team1Elo = (await getPlayerRating(player1) + await getPlayerRating(player2)) / 2;
-    const team2Elo = (await getPlayerRating(player3) + await getPlayerRating(player4)) / 2;
+    // Get individual ratings
+    const player1Rating = await getPlayerRating(player1);
+    const player2Rating = await getPlayerRating(player2);
+    const player3Rating = await getPlayerRating(player3);
+    const player4Rating = await getPlayerRating(player4);
 
-    console.log(`Current Team Elo Ratings: Team1 (${team1Elo}), Team2 (${team2Elo})`);
+    // Calculate team averages (only for expected score calculation)
+    const team1Avg = (player1Rating + player2Rating) / 2;
+    const team2Avg = (player3Rating + player4Rating) / 2;
 
-    const newTeam1Elo = calculateElo(team1Elo, team2Elo, team1Wins ? 1 : 0);
-    const newTeam2Elo = calculateElo(team2Elo, team1Elo, team1Wins ? 0 : 1);
+    console.log(`Team Averages - Team1: ${team1Avg}, Team2: ${team2Avg}`);
 
-    console.log(`New Team Elo Ratings: Team1 (${newTeam1Elo}), Team2 (${newTeam2Elo})`);
+    // Calculate new individual ratings using team averages for expected score
+    const result = team1Wins ? 1 : 0;
+    const newPlayer1Rating = calculateElo(player1Rating, team2Avg, result);
+    const newPlayer2Rating = calculateElo(player2Rating, team2Avg, result);
+    const newPlayer3Rating = calculateElo(player3Rating, team1Avg, 1 - result);
+    const newPlayer4Rating = calculateElo(player4Rating, team1Avg, 1 - result);
 
-    await updatePlayerData(player1, newTeam1Elo, team1Wins);
-    await updatePlayerData(player2, newTeam1Elo, team1Wins);
-    await updatePlayerData(player3, newTeam2Elo, !team1Wins);
-    await updatePlayerData(player4, newTeam2Elo, !team1Wins);
+    console.log("New individual ratings:", {
+        [player1]: newPlayer1Rating,
+        [player2]: newPlayer2Rating,
+        [player3]: newPlayer3Rating,
+        [player4]: newPlayer4Rating
+    });
+
+    // Update player data
+    await Promise.all([
+        updatePlayerData(player1, newPlayer1Rating, team1Wins),
+        updatePlayerData(player2, newPlayer2Rating, team1Wins),
+        updatePlayerData(player3, newPlayer3Rating, !team1Wins),
+        updatePlayerData(player4, newPlayer4Rating, !team1Wins)
+    ]);
 
     // Reload player data and update UI
     playerRatings = await loadPlayerData();
-    updatePlayerList();
+    await updatePlayerList();
 }
 
 async function updateSingleMatch(player1, player2, player1Wins) {
@@ -212,7 +272,7 @@ async function getPlayerRating(playerName) {
     }
 }
 
-function toggleTeamInputs() {
+/*function toggleTeamInputs() {
     const teamPlayers = document.querySelectorAll('.team-player');
     const matchTypeLabel = document.querySelector('.match-type-label');
     const isTeamMatch = teamMatchCheckbox.checked;
@@ -225,7 +285,7 @@ function toggleTeamInputs() {
     });
 
     matchTypeLabel.textContent = isTeamMatch ? '2v2 Match' : '1v1 Match';
-}
+} */
 
 async function updatePlayerList() {
     console.log("Updating player list...");
@@ -236,48 +296,135 @@ async function updatePlayerList() {
         // Get latest player data from Firestore
         const playersSnapshot = await getDocs(collection(db, "players"));
         
-        // Map and sort players by rating
-        const sortedPlayers = playersSnapshot.docs
-            .map(doc => doc.data())
-            .sort((a, b) => b.rating - a.rating);
+               // Map and sort players by weighted Elo
+               const sortedPlayers = playersSnapshot.docs
+               .map(doc => {
+                   const data = doc.data();
+                   const totalMatches = (data.matches || 0);
+                   const wins = (data.wins || 0);
+                   
+                   // Calculate win rate and weighted Elo
+                   const winRate = totalMatches > 0 ? wins / totalMatches : 0;
+                   const weightedElo = data.rating * winRate; // Simple multiplication of Elo with win rate
+                   
+                   return {
+                       id: doc.id,
+                       name: data.name,
+                       rating: data.rating,
+                       matches: totalMatches,
+                       wins: wins,
+                       losses: (data.losses || 0),
+                       weightedElo: weightedElo
+                   };
+               })
+               .sort((a, b) => b.weightedElo - a.weightedElo);
+            
             
         // Create list items for each player
         sortedPlayers.forEach((data, index) => {
-            console.log(`Ranking ${index + 1}: ${data.name} - Elo: ${data.rating}`);
-            
-            const li = document.createElement('li');
             const winRate = data.matches > 0 
                 ? Math.round((data.wins / data.matches) * 100) 
                 : 0;
-                
+            
+            const li = document.createElement('li');
             li.innerHTML = `
                 <span class="rank">${index + 1}</span>
                 <span class="name">${data.name}</span>
                 <span class="elo">${Math.round(data.rating)}</span>
-                <span class="stats">${data.wins || 0}W - ${data.losses || 0}L</span>
+                <span class="stats">${data.wins}W - ${data.losses}L</span>
                 <span class="ratio">${winRate}%</span>
             `;
             playerList.appendChild(li);
         });
+
+        console.log("Player list updated with", sortedPlayers.length, "players");
     } catch (error) {
         console.error("Error updating player list:", error);
     }
 }
 
+// Replace updatePlayersList function with this new version
 async function updatePlayersList() {
-    console.log("Updating player datalist...");
+    console.log("Updating player selects...");
 
-    const datalist = document.getElementById('players-list');
-    datalist.innerHTML = '';
+    const selects = ['player1', 'player2', 'player3', 'player4'].map(id => 
+        document.getElementById(id)
+    );
 
-    const playersSnapshot = await getDocs(collection(db, "players"));
-    playersSnapshot.docs.forEach(doc => {
-        console.log("Adding player to list:", doc.id);
-        const option = document.createElement('option');
-        option.value = doc.id;
-        datalist.appendChild(option);
-    });
+    try {
+        const playersSnapshot = await getDocs(collection(db, "players"));
+        const players = playersSnapshot.docs.map(doc => ({
+            id: doc.id,
+            name: doc.data().name
+        }));
+
+        // Update each select element
+        selects.forEach(select => {
+            // Keep the first "Select Player" option
+            select.innerHTML = '<option value="">Select Player</option>';
+            
+            // Add player options
+            players.forEach(player => {
+                const option = document.createElement('option');
+                option.value = player.id;
+                option.textContent = player.name;
+                select.appendChild(option);
+            });
+        });
+    } catch (error) {
+        console.error("Error updating player selects:", error);
+    }
 }
 
-// Initialize the application
-init();
+// Add validation to prevent selecting the same player multiple times
+document.addEventListener('change', function(event) {
+    if (['player1', 'player2', 'player3', 'player4'].includes(event.target.id)) {
+        const selectedValue = event.target.value;
+        if (selectedValue) {
+            const allSelects = ['player1', 'player2', 'player3', 'player4']
+                .map(id => document.getElementById(id));
+                
+            allSelects.forEach(select => {
+                if (select.id !== event.target.id) {
+                    Array.from(select.options).forEach(option => {
+                        option.disabled = option.value === selectedValue;
+                    });
+                }
+            });
+        }
+    }
+});
+
+// Replace the multiple event listeners with a single initialization
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log("DOM loaded, initializing application...");
+    try {
+        await Promise.all([
+            loadPlayerData().then(data => {
+                playerRatings = data;
+                console.log("Loaded player data from Firestore:", playerRatings);
+            }),
+            updatePlayersList()
+        ]);
+        
+        updatePlayerList();
+        setupEventListeners();
+        
+        // Set up log-match button listener
+        document.getElementById('log-match').addEventListener('click', async function() {
+            const player1 = document.getElementById('player1').value;
+            const player2 = document.getElementById('player2').value;
+            const player3 = document.getElementById('player3').value;
+            const player4 = document.getElementById('player4').value;
+            
+            if (!player1 || !player2 || !player3 || !player4) {
+                alert('Please select all players for both teams');
+                return;
+            }
+
+            await handleLogMatch();
+        });
+    } catch (error) {
+        console.error("Error during initialization:", error);
+    }
+});
