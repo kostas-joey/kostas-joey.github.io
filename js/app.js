@@ -4,6 +4,7 @@ import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gsta
 // Firebase Initialization (already imported in HTML)
 const db = getFirestore();
 
+
 // DOM Elements
 const playerList = document.getElementById('player-list');
 const playerForm = document.getElementById('player-form');
