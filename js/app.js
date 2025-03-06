@@ -21,6 +21,7 @@ import {
 // Firebase Initialization (already imported in HTML)
 const db = getFirestore();
 
+
 // DOM Elements
 const playerList = document.getElementById('player-list');
 const playerForm = document.getElementById('player-form');
@@ -522,3 +523,4 @@ async function displayRecentMatches() {
         console.error("Error displaying match history:", error);
     }
 }
+
