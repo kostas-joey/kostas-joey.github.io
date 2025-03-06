@@ -107,7 +107,6 @@ async function handleAddPlayer(event) {
         playerRatings = await loadPlayerData();
         
         // Update UI
-        updatePlayerList();
         updatePlayersList();
         
         // Clear form
