@@ -1,8 +1,10 @@
 body {
     font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
+    background-color: var(--bg-color);
+    color: var(--text-color);
     margin: 0;
     padding: 0;
+    transition: background-color 0.3s ease;
 }
 
 header {
@@ -36,19 +38,23 @@ h1 {
     font-family: Arial, sans-serif;
 }
 
-.add-player, .match-logger, .player-rankings {
+.add-player, .match-logger, .player-rankings, .recent-matches {
     margin-bottom: 30px;
     padding: 20px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color);
     border-radius: 5px;
+    background: var(--card-bg);
 }
 
 input[type="text"],
-input[type="number"] {
+input[type="number"],
+select {
     padding: 8px;
     margin: 5px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color);
     border-radius: 4px;
+    background-color: var(--bg-color);
+    color: var(--text-color);
 }
 
 .form-group {
@@ -97,7 +103,7 @@ button:hover {
     grid-template-columns: 50px 2fr 1fr 1fr 1fr;
     gap: 1rem;
     padding: 1rem;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--border-color);
     align-items: center;
     transition: background-color 0.2s ease;
 }
@@ -146,7 +152,7 @@ footer {
 }
 
 .match-logger {
-    background: #fff;
+    background: var(--card-bg);
     padding: 2rem;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -242,14 +248,14 @@ input:checked + .slider:before {
 
 .team h3 {
     margin: 0 0 1rem 0;
-    color: #2c3e50;
+    color: var(--text-color);
     text-align: center;
 }
 
 .versus {
     font-size: 1.5rem;
     font-weight: bold;
-    color: #2c3e50;
+    color: var(--text-color);
 }
 
 .player-input {
@@ -261,7 +267,7 @@ input:checked + .slider:before {
 .player-input label {
     display: block;
     margin-bottom: 0.5rem;
-    color: #566573;
+    color: var(--text-color);
 }
 
 .player-input input {
@@ -277,9 +283,11 @@ input:checked + .slider:before {
     width: 100%;
     padding: 8px;
     margin: 5px 0;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color);
     border-radius: 4px;
     font-size: 16px;
+    background-color: var(--bg-color);
+    color: var(--text-color);
 }
 
 .player-input select:focus {
@@ -345,7 +353,7 @@ input:checked + .slider:before {
 }
 
 .player-rankings {
-    background: #fff;
+    background: var(--card-bg);
     padding: 2rem;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -481,7 +489,7 @@ input:checked + .slider:before {
 }
 
 .recent-matches {
-    background: #fff;
+    background: var(--card-bg);
     padding: 2rem;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -546,4 +554,84 @@ img.emoji {
     margin: 0 .05em 0 .1em;
     vertical-align: -0.2em;
     display: inline-block;
+}
+
+/* Theme Switch */
+.theme-switch-wrapper {
+    display: flex;
+    align-items: center;
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.theme-switch-wrapper em {
+    margin-left: 10px;
+    font-size: 1rem;
+    color: #fff;
+}
+
+.theme-switch {
+    display: inline-block;
+    height: 34px;
+    position: relative;
+    width: 60px;
+}
+
+.theme-switch input {
+    display: none;
+}
+
+.slider {
+    background-color: #ccc;
+    bottom: 0;
+    cursor: pointer;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    transition: .4s;
+}
+
+.slider:before {
+    background-color: #fff;
+    bottom: 4px;
+    content: "";
+    height: 26px;
+    left: 4px;
+    position: absolute;
+    transition: .4s;
+    width: 26px;
+}
+
+input:checked + .slider {
+    background-color: #2e0000;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+.slider.round {
+    border-radius: 34px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+/* Dark Theme Colors */
+[data-theme="dark"] {
+    --bg-color: #1a1a1a;
+    --text-color: #fff;
+    --card-bg: #2d2d2d;
+    --border-color: #404040;
+}
+
+[data-theme="light"] {
+    --bg-color: #dbdbdb;
+    --text-color: #000;
+    --card-bg: #ececec;
+    --border-color: #ddd;
 }
