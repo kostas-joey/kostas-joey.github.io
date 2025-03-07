@@ -87,6 +87,7 @@ async function handleAddPlayer(event) {
     event.preventDefault();
 
     const playerName = playerNameInput.value.trim();
+    const playerFlag = document.getElementById('player-flag').value;
     const playerRating = parseInt(playerRatingInput.value) || 1200;
 
     console.log("Attempting to add player:", playerName, "with rating:", playerRating);
@@ -97,11 +98,14 @@ async function handleAddPlayer(event) {
         return;
     }
 
+        // Create display name with flag
+        const playerDisplayName = `${playerName} ${playerFlag}`;
+
     // Check if player exists in Firestore
     try {
-        const playerData = await getPlayerFromFirestore(playerName);
+        const playerData = await getPlayerFromFirestore(playerDisplayName);
         if (playerData) {
-            console.warn("Player already exists:", playerName);
+            console.warn("Player already exists:", playerDisplayName);
             alert('Player already exists');
             return;
         }
@@ -111,7 +115,7 @@ async function handleAddPlayer(event) {
 
     // Add new player
     const newPlayer = { 
-        name: playerName,
+        name: playerDisplayName,
         rating: playerRating, 
         matches: 0, 
         wins: 0, 
@@ -119,7 +123,7 @@ async function handleAddPlayer(event) {
     };
 
     try {
-        await savePlayerData(playerName, newPlayer);
+        await savePlayerData(playerDisplayName, newPlayer);
         console.log("Player added successfully:", newPlayer);
         
         // Reload player data to refresh our local cache
@@ -127,10 +131,12 @@ async function handleAddPlayer(event) {
         
         // Update UI
         updatePlayersList();
+        twemoji.parse(document.body); // Parse new content for emoji
         
         // Clear form
         playerNameInput.value = '';
         playerRatingInput.value = '1200';
+        document.getElementById('player-flag').value = '';
     } catch (error) {
         console.error("Failed to save player:", error);
         alert('Failed to add player');
@@ -389,6 +395,8 @@ async function updatePlayerList() {
             playerList.appendChild(li);
         });
 
+        convertEmojis(playerList);
+
         console.log("Player list updated with", sortedPlayers.length, "players");
     } catch (error) {
         console.error("Error updating player list:", error);
@@ -422,6 +430,7 @@ async function updatePlayersList() {
                 option.textContent = player.name;
                 select.appendChild(option);
             });
+            convertEmojis(select);
         });
     } catch (error) {
         console.error("Error updating player selects:", error);
@@ -476,6 +485,7 @@ document.addEventListener('DOMContentLoaded', () => {
     checkAuthentication();
 });
 
+
 // Add to window object for onclick access
 window.checkPassword = checkPassword;
 
@@ -519,8 +529,19 @@ async function displayRecentMatches() {
             `;
             matchesList.appendChild(li);
         });
+
+        convertEmojis(playerList);
+
     } catch (error) {
         console.error("Error displaying match history:", error);
     }
 }
 
+function convertEmojis(element) {
+    if (typeof twemoji !== 'undefined') {
+        twemoji.parse(element, {
+            folder: 'svg',
+            ext: '.svg'
+        });
+    }
+}

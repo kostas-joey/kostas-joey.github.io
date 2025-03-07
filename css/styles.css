@@ -51,6 +51,28 @@ input[type="number"] {
     border-radius: 4px;
 }
 
+.form-group {
+    margin-bottom: 1rem;
+}
+
+#player-flag {
+    font-size: 16px;
+    padding: 5px;
+    margin-left: 5px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
+#player-flag option {
+    font-size: 16px;
+    padding: 5px;
+}
+
+.player-flag {
+    margin-right: 0.5rem;
+    font-size: 1.2em;
+}
+
 button {
     padding: 8px 16px;
     background-color: #dc3545;
@@ -197,12 +219,12 @@ input:checked + .slider:before {
 
 /* Team 1 specific background */
 .team:first-child {
-    background: #f8f9fa url('../images/player_black.png') center/contain no-repeat;
+    background: url('../images/player_black.png') center/contain no-repeat;
 }
 
 /* Team 2 specific background */
 .team:last-child {
-    background: #f8f9fa url('../images/player_gray.png') center/contain no-repeat;
+    background: url('../images/player_gray.png') center/contain no-repeat;
 }
 
 /* Add overlay for better text readability */
@@ -516,4 +538,12 @@ input:checked + .slider:before {
 
 .elo-negative {
     color: #f44336;
+}
+
+img.emoji {
+    height: 1.2em;
+    width: 1.2em;
+    margin: 0 .05em 0 .1em;
+    vertical-align: -0.2em;
+    display: inline-block;
 }
