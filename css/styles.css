@@ -1,15 +1,30 @@
 body {
     font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
+    background-color: var(--bg-color);
+    color: var(--text-color);
     margin: 0;
     padding: 0;
+    transition: background-color 0.3s ease;
 }
 
 header {
-    background: #35424a;
+    background: #83000d;
     color: #ffffff;
     padding: 10px 0;
     text-align: center;
+    position: relative;
+    display: flex;  
+    justify-content: center;
+    align-items: center;
+}
+
+.header-logo {
+    position: absolute;
+    top: 50%;
+    right: 20px;
+    transform: translateY(-50%);
+    height: 50px;  /* Adjust size as needed */
+    width: auto;
 }
 
 h1 {
@@ -23,24 +38,50 @@ h1 {
     font-family: Arial, sans-serif;
 }
 
-.add-player, .match-logger, .player-rankings {
+.add-player, .match-logger, .player-rankings, .recent-matches {
     margin-bottom: 30px;
     padding: 20px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color);
     border-radius: 5px;
+    background: var(--card-bg);
 }
 
 input[type="text"],
-input[type="number"] {
+input[type="number"],
+select {
     padding: 8px;
     margin: 5px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color);
     border-radius: 4px;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+#player-flag {
+    font-size: 16px;
+    padding: 5px;
+    margin-left: 5px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
+#player-flag option {
+    font-size: 16px;
+    padding: 5px;
+}
+
+.player-flag {
+    margin-right: 0.5rem;
+    font-size: 1.2em;
 }
 
 button {
     padding: 8px 16px;
-    background-color: #4CAF50;
+    background-color: #dc3545;
     color: white;
     border: none;
     border-radius: 4px;
@@ -48,7 +89,7 @@ button {
 }
 
 button:hover {
-    background-color: #45a049;
+    background-color: #c82333;
 }
 
 #player-list {
@@ -62,7 +103,7 @@ button:hover {
     grid-template-columns: 50px 2fr 1fr 1fr 1fr;
     gap: 1rem;
     padding: 1rem;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--border-color);
     align-items: center;
     transition: background-color 0.2s ease;
 }
@@ -111,7 +152,7 @@ footer {
 }
 
 .match-logger {
-    background: #fff;
+    background: var(--card-bg);
     padding: 2rem;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -176,17 +217,45 @@ input:checked + .slider:before {
     padding: 1.5rem;
     background: #f8f9fa;
     border-radius: 8px;
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+    min-height: 200px;
 }
+
+/* Team 1 specific background */
+.team:first-child {
+    background: url('../images/player_black.png') center/contain no-repeat;
+}
+
+/* Team 2 specific background */
+.team:last-child {
+    background: url('../images/player_gray.png') center/contain no-repeat;
+}
+
+/* Add overlay for better text readability */
+.team::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -1;
+    border-radius: 8px;
+}
+
 
 .team h3 {
     margin: 0 0 1rem 0;
-    color: #2c3e50;
+    color: var(--text-color);
+    text-align: center;
 }
 
 .versus {
     font-size: 1.5rem;
     font-weight: bold;
-    color: #2c3e50;
+    color: var(--text-color);
 }
 
 .player-input {
@@ -198,7 +267,7 @@ input:checked + .slider:before {
 .player-input label {
     display: block;
     margin-bottom: 0.5rem;
-    color: #566573;
+    color: var(--text-color);
 }
 
 .player-input input {
@@ -214,14 +283,16 @@ input:checked + .slider:before {
     width: 100%;
     padding: 8px;
     margin: 5px 0;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color);
     border-radius: 4px;
     font-size: 16px;
+    background-color: var(--bg-color);
+    color: var(--text-color);
 }
 
 .player-input select:focus {
     outline: none;
-    border-color: #007bff;
+    border-color: #dc3545;
     box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
 }
 
@@ -246,7 +317,7 @@ input:checked + .slider:before {
 }
 
 .radio-button:hover {
-    border-color: #4CAF50;
+    border-color: #dc3545;
 }
 
 .radio-button input[type="radio"] {
@@ -254,11 +325,11 @@ input:checked + .slider:before {
 }
 
 .radio-button input[type="radio"]:checked + .radio-label {
-    color: #4CAF50;
+    color: #dc3545;
 }
 
 .radio-button input[type="radio"]:checked + .radio-label::before {
-    background-color: #4CAF50;
+    background-color: #dc3545;
 }
 
 /* Primary Button */
@@ -268,7 +339,7 @@ input:checked + .slider:before {
     max-width: 200px;
     margin: 2rem auto 0;
     padding: 1rem 2rem;
-    background-color: #4CAF50;
+    background-color: #dc3545;
     color: white;
     border: none;
     border-radius: 4px;
@@ -278,11 +349,11 @@ input:checked + .slider:before {
 }
 
 .primary-button:hover {
-    background-color: #45a049;
+    background-color: #c82333;
 }
 
 .player-rankings {
-    background: #fff;
+    background: var(--card-bg);
     padding: 2rem;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -311,7 +382,7 @@ input:checked + .slider:before {
 
 .elo {
     font-weight: bold;
-    color: #2ecc71;
+    color: #dc3545;
 }
 
 .stats {
@@ -418,7 +489,7 @@ input:checked + .slider:before {
 }
 
 .recent-matches {
-    background: #fff;
+    background: var(--card-bg);
     padding: 2rem;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -475,4 +546,206 @@ input:checked + .slider:before {
 
 .elo-negative {
     color: #f44336;
+}
+
+img.emoji {
+    height: 1.2em;
+    width: 1.2em;
+    margin: 0 .05em 0 .1em;
+    vertical-align: -0.2em;
+    display: inline-block;
+}
+
+/* Theme Switch */
+.theme-switch-wrapper {
+    display: flex;
+    align-items: center;
+    position: relative;
+    left: 40rem;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-top: -1.7rem;
+    z-index: 1;
+}
+
+.theme-switch-wrapper em {
+    margin-left: 10px;
+    font-size: 1rem;
+    color: #fff;
+}
+
+.theme-switch {
+    display: inline-block;
+    height: 34px;
+    position: relative;
+    width: 70px;
+}
+
+.theme-switch input {
+    display: none;
+}
+
+.slider {
+    background-color: #ccc;
+    bottom: 0;
+    cursor: pointer;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    transition: .4s;
+}
+
+.slider:before {
+    background-color: #ffffff;
+    bottom: 4px;
+    content: "";
+    height: 26px;
+    left: 4px;
+    position: absolute;
+    transition: .4s;
+    width: 26px;
+}
+
+input:checked + .slider {
+    background-color: #2e0000;
+}
+
+input:checked + .slider:before {
+    transform: translateX(36px);
+}
+
+.slider.round {
+    border-radius: 34px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+/* Add these rules to your existing theme switch CSS */
+.slider .sun,
+.slider .moon {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+    transition: .4s;
+}
+
+.slider .sun {
+    left: 5px;
+    opacity: 1;
+}
+
+.slider .moon {
+    right: 5px;
+    opacity: 0;
+}
+
+/* Update visibility of icons when theme is switched */
+input:checked + .slider .sun {
+    opacity: 0;
+}
+
+input:checked + .slider .moon {
+    opacity: 1;
+}
+
+/* Adjust the slider size to accommodate icons */
+.theme-switch {
+    width: 70px;
+}
+
+/* Update these rules for SVG icons */
+.slider svg {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: .4s;
+    stroke-width: 2;
+}
+
+.slider .sun {
+    left: 8px;
+    stroke: #000000;
+    opacity: 1;
+}
+
+.slider .moon {
+    right: 9px;
+    stroke: #000000;
+    opacity: 0;
+}
+
+input:checked + .slider .sun {
+    opacity: 0;
+}
+
+input:checked + .slider .moon {
+    opacity: 1;
+}
+
+/* Dark Theme Colors */
+[data-theme="dark"] {
+    --bg-color: #1a1a1a;
+    --text-color: #fff;
+    --card-bg: #2d2d2d;
+    --border-color: #404040;
+}
+
+[data-theme="light"] {
+    --bg-color: #dbdbdb;
+    --text-color: #000;
+    --card-bg: #ececec;
+    --border-color: #ddd;
+}
+
+/* Stats Page Styles */
+.stats-container {
+    background: var(--card-bg);
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin: 2rem 0;
+}
+
+.chart-container {
+    width: 100%;
+    height: 500px;
+    margin-top: 2rem;
+}
+
+.player-filter {
+    margin-bottom: 2rem;
+}
+
+.player-filter select {
+    width: 100%;
+    max-width: 400px;
+    padding: 8px;
+    margin-top: 1rem;
+}
+
+.nav-menu {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.nav-menu a {
+    color: white;
+    text-decoration: none;
+    margin-right: 1rem;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+}
+
+.nav-menu a.active {
+    background: rgba(255,255,255,0.2);
+}
+
+.nav-menu a:hover {
+    background: rgba(255,255,255,0.1);
 }

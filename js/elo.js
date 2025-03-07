@@ -177,11 +177,23 @@ async function processTeamMatch(team1Players, team2Players, team1Wins) {
 // Save match history to Firestore
 async function saveMatchHistory(match) {
     try {
+        // Get current ratings for all players
+        const eloChanges = await Promise.all(match.eloChanges.map(async change => {
+            const playerDoc = await getDoc(doc(db, "players", change.player));
+            const currentRating = playerDoc.exists() ? playerDoc.data().rating : 1200;
+            return {
+                ...change,
+                rating: currentRating // Add current rating to history
+            };
+        }));
+
         const matchesRef = collection(db, "matches");
         await addDoc(matchesRef, {
             ...match,
+            eloChanges, // Store complete elo changes with ratings
             timestamp: serverTimestamp()
         });
+        
         console.log("Match history saved successfully");
         return true;
     } catch (error) {
@@ -189,7 +201,6 @@ async function saveMatchHistory(match) {
         return false;
     }
 }
-
 // Export all functions
 export {
     calculateElo,
