@@ -6,10 +6,23 @@ body {
 }
 
 header {
-    background: #35424a;
+    background: #83000d;
     color: #ffffff;
     padding: 10px 0;
     text-align: center;
+    position: relative;
+    display: flex;  
+    justify-content: center;
+    align-items: center;
+}
+
+.header-logo {
+    position: absolute;
+    top: 50%;
+    right: 20px;
+    transform: translateY(-50%);
+    height: 50px;  /* Adjust size as needed */
+    width: auto;
 }
 
 h1 {
@@ -40,7 +53,7 @@ input[type="number"] {
 
 button {
     padding: 8px 16px;
-    background-color: #4CAF50;
+    background-color: #dc3545;
     color: white;
     border: none;
     border-radius: 4px;
@@ -48,7 +61,7 @@ button {
 }
 
 button:hover {
-    background-color: #45a049;
+    background-color: #c82333;
 }
 
 #player-list {
@@ -176,11 +189,39 @@ input:checked + .slider:before {
     padding: 1.5rem;
     background: #f8f9fa;
     border-radius: 8px;
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+    min-height: 200px;
 }
+
+/* Team 1 specific background */
+.team:first-child {
+    background: #f8f9fa url('../images/player_black.png') center/contain no-repeat;
+}
+
+/* Team 2 specific background */
+.team:last-child {
+    background: #f8f9fa url('../images/player_gray.png') center/contain no-repeat;
+}
+
+/* Add overlay for better text readability */
+.team::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -1;
+    border-radius: 8px;
+}
+
 
 .team h3 {
     margin: 0 0 1rem 0;
     color: #2c3e50;
+    text-align: center;
 }
 
 .versus {
@@ -221,7 +262,7 @@ input:checked + .slider:before {
 
 .player-input select:focus {
     outline: none;
-    border-color: #007bff;
+    border-color: #dc3545;
     box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
 }
 
@@ -246,7 +287,7 @@ input:checked + .slider:before {
 }
 
 .radio-button:hover {
-    border-color: #4CAF50;
+    border-color: #dc3545;
 }
 
 .radio-button input[type="radio"] {
@@ -254,11 +295,11 @@ input:checked + .slider:before {
 }
 
 .radio-button input[type="radio"]:checked + .radio-label {
-    color: #4CAF50;
+    color: #dc3545;
 }
 
 .radio-button input[type="radio"]:checked + .radio-label::before {
-    background-color: #4CAF50;
+    background-color: #dc3545;
 }
 
 /* Primary Button */
@@ -268,7 +309,7 @@ input:checked + .slider:before {
     max-width: 200px;
     margin: 2rem auto 0;
     padding: 1rem 2rem;
-    background-color: #4CAF50;
+    background-color: #dc3545;
     color: white;
     border: none;
     border-radius: 4px;
@@ -278,7 +319,7 @@ input:checked + .slider:before {
 }
 
 .primary-button:hover {
-    background-color: #45a049;
+    background-color: #c82333;
 }
 
 .player-rankings {
@@ -311,7 +352,7 @@ input:checked + .slider:before {
 
 .elo {
     font-weight: bold;
-    color: #2ecc71;
+    color: #dc3545;
 }
 
 .stats {
