@@ -749,3 +749,123 @@ input:checked + .slider .moon {
 .nav-menu a:hover {
     background: rgba(255,255,255,0.1);
 }
+
+/* Add these media queries at the end of your styles.css file */
+
+@media screen and (max-width: 768px) {
+    .container {
+        padding: 10px;
+        max-width: 100%;
+    }
+
+    /* Header adjustments */
+    header {
+        flex-direction: column;
+        padding: 15px 0;
+    }
+
+    .header-logo {
+        position: static;
+        transform: none;
+        margin-top: 10px;
+        height: 40px;
+    }
+
+    .nav-menu {
+        position: static;
+        transform: none;
+        margin: 10px 0;
+    }
+
+    .theme-switch-wrapper {
+        position: static;
+        transform: none;
+        margin: 10px auto;
+        left: 0;
+    }
+
+    /* Match logger adjustments */
+    .teams-container {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .versus {
+        margin: 10px 0;
+    }
+
+    .team {
+        width: 100%;
+        min-height: 150px;
+    }
+
+    /* Player rankings adjustments */
+    .rankings-header, #player-list li {
+        grid-template-columns: 40px 2fr 1fr 1fr;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .ratio {
+        display: none;
+    }
+
+    /* Recent matches adjustments */
+    #matches-list li {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .match-result, .elo-changes {
+        width: 100%;
+        text-align: left;
+    }
+
+    /* Form adjustments */
+    .add-player form {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select {
+        width: 100%;
+        margin: 5px 0;
+    }
+
+    /* Stats page adjustments */
+    .stats-container {
+        padding: 1rem;
+    }
+
+    .chart-container {
+        height: 300px;
+    }
+
+    #player-select {
+        max-width: 100%;
+    }
+}
+
+/* Additional adjustments for very small screens */
+@media screen and (max-width: 480px) {
+    header h1 {
+        font-size: 1.5rem;
+    }
+
+    .rankings-header, #player-list li {
+        grid-template-columns: 30px 2fr 1fr;
+        font-size: 0.8rem;
+    }
+
+    .stats {
+        display: none;
+    }
+
+    .nav-menu a {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.9rem;
+    }
+}
