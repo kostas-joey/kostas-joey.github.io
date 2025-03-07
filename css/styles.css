@@ -560,10 +560,12 @@ img.emoji {
 .theme-switch-wrapper {
     display: flex;
     align-items: center;
-    position: absolute;
-    left: 20px;
+    position: relative;
+    left: 40rem;
     top: 50%;
     transform: translateY(-50%);
+    margin-top: -1.7rem;
+    z-index: 1;
 }
 
 .theme-switch-wrapper em {
@@ -697,4 +699,53 @@ input:checked + .slider .moon {
     --text-color: #000;
     --card-bg: #ececec;
     --border-color: #ddd;
+}
+
+/* Stats Page Styles */
+.stats-container {
+    background: var(--card-bg);
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin: 2rem 0;
+}
+
+.chart-container {
+    width: 100%;
+    height: 500px;
+    margin-top: 2rem;
+}
+
+.player-filter {
+    margin-bottom: 2rem;
+}
+
+.player-filter select {
+    width: 100%;
+    max-width: 400px;
+    padding: 8px;
+    margin-top: 1rem;
+}
+
+.nav-menu {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.nav-menu a {
+    color: white;
+    text-decoration: none;
+    margin-right: 1rem;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+}
+
+.nav-menu a.active {
+    background: rgba(255,255,255,0.2);
+}
+
+.nav-menu a:hover {
+    background: rgba(255,255,255,0.1);
 }
