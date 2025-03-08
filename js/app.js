@@ -392,6 +392,8 @@ async function updatePlayerList() {
                 <span class="stats">${data.wins}W - ${data.losses}L</span>
                 <span class="ratio">${winRate}%</span>
             `;
+            li.style.cursor = 'pointer';
+            li.onclick = () => window.location.href = `player-profile.html?id=${data.id}`;
             playerList.appendChild(li);
         });
 

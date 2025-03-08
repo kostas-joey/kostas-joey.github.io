@@ -869,3 +869,217 @@ input:checked + .slider .moon {
         font-size: 0.9rem;
     }
 }
+
+/* Profile Page Styles */
+.profile-container {
+    background: var(--card-bg);
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin: 2rem 0;
+}
+
+.profile-header {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 2rem;
+    align-items: flex-start;
+}
+
+.profile-image-container {
+    position: relative;
+    width: 200px;
+    flex-shrink: 0;
+    height: 200px;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+#profile-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.profile-info {
+    flex-grow: 1;
+}
+
+.profile-info h2 {
+    margin: 0 0 1rem 0;
+    font-size: 2rem;
+}
+
+.bio-section {
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+#player-bio {
+    line-height: 1.6;
+    margin-bottom: 1rem;
+}
+
+.edit-button {
+    padding: 0.5rem 1rem;
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--text-color);
+    transition: background-color 0.2s ease;
+}
+
+.edit-button:hover {
+    background: var(--border-color);
+}
+
+#edit-profile-image {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+}
+
+.stats-section {
+    margin-bottom: 2rem;
+}
+
+#player-matches {
+    list-style: none;
+    padding: 0;
+}
+
+#player-matches li {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.match-result {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.match-teams {
+    font-weight: bold;
+}
+
+.match-details {
+    text-align: right;
+    color: var(--text-color);
+}
+
+.match-outcome {
+    margin-left: 1rem;
+}
+
+.match-result.win .match-outcome {
+    color: #4CAF50;
+}
+
+.match-result.loss .match-outcome {
+    color: #f44336;
+}
+
+.match-date {
+    color: var(--text-color);
+    opacity: 0.7;
+    font-size: 0.9em;
+}
+
+/* Mobile responsiveness for profile page */
+@media screen and (max-width: 768px) {
+    .profile-header {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .profile-image-container {
+        width: 150px;
+        margin-bottom: 1rem;
+    }
+
+    .profile-info {
+        text-align: center;
+    }
+}
+
+.extended-stats {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: var(--card-bg);
+    border-radius: 4px;
+}
+
+.profile-actions {
+    margin-top: 1rem;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 1rem;
+    background: var(--bg-color);
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+.stat-value {
+    color: var(--text-color);
+}
+
+#elo-history {
+    width: 100%;
+    height: 400px;
+    margin: 1rem 0;
+}
+
+.error {
+    color: #dc3545;
+    text-align: center;
+    padding: 1rem;
+}
+
+/* Add to styles.css */
+.edit-button {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+
+.edit-button:hover {
+    opacity: 1;
+}
+
+/* Profile image edit button specific */
+#edit-profile-image {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    border: none;
+}
+
+/* Bio edit button specific */
+.bio-container {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
