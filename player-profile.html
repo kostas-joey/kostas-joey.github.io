@@ -44,6 +44,7 @@
             <div class="profile-header">
                 <div class="profile-image-container">
                     <img id="profile-image" src="../assets/default-profile.png" alt="Profile picture">
+                    <input type="file" id="profile-image-input" accept="image/*" style="display: none;">
                     <button id="edit-profile-image" class="edit-button">
                         <i class="fas fa-camera"></i> Change Photo
                     </button>
@@ -56,6 +57,25 @@
                             <i class="fas fa-edit"></i> Edit Bio
                         </button>
                     </div>
+                    <div id="bio-edit-modal" class="modal">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h2>Edit Bio</h2>
+                                <span class="close">&times;</span>
+                            </div>
+                            <div class="modal-body">
+                                <textarea id="bio-editor" maxlength="1000" rows="6"></textarea>
+                                <div class="char-counter">
+                                    <span id="char-count">0</span>/1000 characters
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button id="save-bio" class="btn btn-primary">Save</button>
+                                <button id="cancel-bio" class="btn btn-secondary">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
             

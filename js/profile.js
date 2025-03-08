@@ -89,7 +89,8 @@ async function loadPlayerProfile() {
         
         // Update bio with fallback
         const bioElement = document.getElementById('player-bio');
-        bioElement.textContent = playerData.bio || 'No bio available.';
+        // Preserve line breaks when loading
+        bioElement.innerHTML = (playerData.bio || 'No bio available.').replace(/\n/g, '<br>');
 
         // Load performance data
         await Promise.all([
@@ -226,7 +227,20 @@ async function loadEloHistory() {
 }
 
 // Edit profile handlers
+const bioModal = document.getElementById('bio-edit-modal');
+const bioEditor = document.getElementById('bio-editor');
+const charCount = document.getElementById('char-count');
+const closeBtn = document.querySelector('.close');
+const saveBtn = document.getElementById('save-bio');
+const cancelBtn = document.getElementById('cancel-bio');
+
+// Bio editor event listeners
 document.getElementById('edit-bio').addEventListener('click', async () => {
+    if (!await verifyPassword(playerId)) {
+        alert('Incorrect password');
+        return;
+    }
+
     const playerDoc = await getDoc(doc(db, "players", playerId));
     if (!playerDoc.exists()) {
         alert('Player not found');
@@ -234,68 +248,104 @@ document.getElementById('edit-bio').addEventListener('click', async () => {
     }
 
     const currentBio = playerDoc.data().bio || '';
-    const newBio = prompt('Enter new bio:', currentBio);
+    bioEditor.value = currentBio;
+    charCount.textContent = currentBio.length;
+    bioModal.style.display = 'block';
+});
+
+// Character counter
+bioEditor.addEventListener('input', () => {
+    const length = bioEditor.value.length;
+    charCount.textContent = length;
+});
+
+// Close modal handlers
+closeBtn.addEventListener('click', () => bioModal.style.display = 'none');
+cancelBtn.addEventListener('click', () => bioModal.style.display = 'none');
+window.addEventListener('click', (e) => {
+    if (e.target === bioModal) bioModal.style.display = 'none';
+});
+
+// Save bio handler
+saveBtn.addEventListener('click', async () => {
+    const newBio = bioEditor.value.trim();
     
-    if (newBio !== null) {
-        try {
-            await updateDoc(doc(db, "players", playerId), { 
-                bio: newBio.trim() 
-            });
-            document.getElementById('player-bio').textContent = newBio.trim() || 'No bio available.';
-        } catch (error) {
-            console.error('Error updating bio:', error);
-            alert('Failed to update bio. Please try again.');
-        }
+    try {
+        await updateDoc(doc(db, "players", playerId), { 
+            bio: newBio 
+        });
+        // Preserve line breaks when displaying
+        document.getElementById('player-bio').innerHTML = newBio.replace(/\n/g, '<br>') || 'No bio available.';
+        bioModal.style.display = 'none';
+    } catch (error) {
+        console.error('Error updating bio:', error);
+        alert('Failed to update bio. Please try again.');
     }
 });
 
-document.getElementById('edit-profile-image').addEventListener('click', () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    
-    input.onchange = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        try {
-            // Validate file size (max 2MB)
-            if (file.size > 2 * 1024 * 1024) {
-                alert('Image must be less than 2MB');
-                return;
-            }
-
-            // Show loading state
-            document.getElementById('profile-image').style.opacity = '0.5';
-            
-            // Create storage reference with file extension
-            const fileExt = file.name.split('.').pop();
-            const storageRef = ref(storage, `profile-images/${playerId}.${fileExt}`);
-            
-            // Upload file
-            await uploadBytes(storageRef, file);
-            
-            // Get download URL
-            const url = await getDownloadURL(storageRef);
-            
-            // Update player document with new image URL
-            await updateDoc(doc(db, "players", playerId), { 
-                profileImage: url 
-            });
-            
-            // Update image in UI
-            const profileImage = document.getElementById('profile-image');
-            profileImage.src = url;
-            profileImage.style.opacity = '1';
-        } catch (error) {
-            console.error('Error uploading image:', error);
-            alert('Failed to upload image. Please try again.');
-            document.getElementById('profile-image').style.opacity = '1';
-        }
-    };
-
-    input.click();
+document.getElementById('edit-profile-image').addEventListener('click', async () => {
+    if (!await verifyPassword(playerId)) {
+        alert('Incorrect password');
+        return;
+    }
+    document.getElementById('profile-image-input').click();
 });
+
+async function handleProfileImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Check file size (limit to 800KB to stay safely under 1MB when converted)
+    if (file.size > 800000) {
+        alert('Image too large. Please choose an image under 800KB.');
+        return;
+    }
+
+    try {
+        // Convert image to base64
+        const base64String = await convertImageToBase64(file);
+        
+        // Update Firestore
+        const playerRef = doc(db, 'players', playerId);
+        await updateDoc(playerRef, {
+            profileImage: base64String
+        });
+
+        // Update UI
+        document.getElementById('profile-image').src = base64String;
+    } catch (error) {
+        console.error('Error uploading image:', error);
+        alert('Failed to upload image. Please try again.');
+    }
+}
+
+function convertImageToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+async function verifyPassword(playerId) {
+    const password = prompt('Please enter your password to make changes:');
+    if (!password) return false;
+
+    try {
+        const playerDoc = await getDoc(doc(db, "players", playerId));
+        if (!playerDoc.exists()) return false;
+
+        const playerData = playerDoc.data();
+        return playerData.password === password;
+    } catch (error) {
+        console.error('Error verifying password:', error);
+        return false;
+    }
+}
+
+// Add event listener
+document.getElementById('profile-image-input').addEventListener('change', handleProfileImageUpload);
 
 // Initialize
 loadPlayerProfile();

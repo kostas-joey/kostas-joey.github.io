@@ -884,15 +884,37 @@ input:checked + .slider .moon {
     gap: 2rem;
     margin-bottom: 2rem;
     align-items: flex-start;
+    flex-wrap: wrap; /* Added to handle narrow screens */
 }
 
 .profile-image-container {
     position: relative;
     width: 200px;
-    flex-shrink: 0;
     height: 200px;
-    border-radius: 8px;
     overflow: hidden;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#edit-profile-image {
+    position: absolute;
+    bottom: 50%;
+    left: 50%;
+    transform: translate(-50%, 50%);
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 12px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.profile-image-container:hover #edit-profile-image {
+    opacity: 1;
 }
 
 #profile-image {
@@ -902,7 +924,8 @@ input:checked + .slider .moon {
 }
 
 .profile-info {
-    flex-grow: 1;
+    flex: 1;
+    min-width: 300px; /* Ensures reasonable text width */
 }
 
 .profile-info h2 {
@@ -933,14 +956,6 @@ input:checked + .slider .moon {
 
 .edit-button:hover {
     background: var(--border-color);
-}
-
-#edit-profile-image {
-    position: absolute;
-    bottom: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    white-space: nowrap;
 }
 
 .stats-section {
@@ -1069,11 +1084,21 @@ input:checked + .slider .moon {
 /* Profile image edit button specific */
 #edit-profile-image {
     position: absolute;
-    bottom: 10px;
-    right: 10px;
+    bottom: 50%;
+    left: 50%;
+    transform: translate(-50%, 50%);
     background: rgba(0, 0, 0, 0.6);
     color: white;
     border: none;
+    border-radius: 4px;
+    padding: 8px 12px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.profile-image-container:hover #edit-profile-image {
+    opacity: 1;
 }
 
 /* Bio edit button specific */
@@ -1082,4 +1107,135 @@ input:checked + .slider .moon {
     display: flex;
     align-items: flex-start;
     gap: 1rem;
+}
+
+.bio-text {
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 10px;
+    margin-bottom: 10px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-width: 600px;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    background-color: var(--bg-color);
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid var(--border-color);
+    width: 80%;
+    max-width: 600px;
+    border-radius: 8px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.close {
+    color: var(--text-color);
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: var(--accent-color);
+}
+
+#bio-editor {
+    width: 100%;
+    min-height: 200px;
+    max-height: 400px;
+    padding: 15px;
+    margin-bottom: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    resize: vertical;
+    font-family: inherit;
+    line-height: 1.6;
+    white-space: pre-line;
+}
+
+.char-counter {
+    text-align: right;
+    margin-top: 5px;
+    color: var(--text-secondary);
+    font-size: 0.9em;
+}
+
+.modal-footer {
+    margin-top: 15px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* Bio container and text styling */
+.bio-container {
+    position: relative;
+    margin-bottom: 2rem;
+    width: 100%;
+    max-width: 600px;
+}
+
+.bio-text {
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 15px;
+    margin-bottom: 15px;
+    white-space: pre-line; /* Changed from pre-wrap to pre-line */
+    word-wrap: break-word;
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    line-height: 1.6;
+}
+
+/* Bio editor modal styling */
+#bio-editor {
+    width: 100%;
+    min-height: 200px;
+    max-height: 400px;
+    padding: 15px;
+    margin-bottom: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    resize: vertical;
+    font-family: inherit;
+    line-height: 1.6;
+    white-space: pre-line;
+}
+
+/* Profile layout fixes */
+.profile-header {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 2rem;
+    align-items: flex-start;
+    flex-wrap: wrap; /* Added to handle narrow screens */
+}
+
+.profile-info {
+    flex: 1;
+    min-width: 300px; /* Ensures reasonable text width */
 }
