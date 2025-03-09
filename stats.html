@@ -42,15 +42,35 @@
 
         <div class="stats-container">
             <div class="player-filter">
-                <h2>Player Elo History</h2>
-                <select id="player-select" multiple>
-                    <!-- Will be populated with JavaScript -->
-                </select>
+                <h2>Player Statistics</h2>
+                <div class="player-select-container">
+                    <h3>Select Players to Display</h3>
+                    <div id="player-checkboxes" class="player-checkbox-list">
+                        <!-- Will be populated with JavaScript -->
+                    </div>
+                </div>
+                <div class="charts-stack">
+                    <div class="chart-wrapper">
+                        <h3>Elo Rating History</h3>
+                        <div id="elo-chart" class="chart-container"></div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <h3>Position Wins</h3>
+                        <div id="position-chart" class="chart-container"></div>
+                    </div>
+                </div>
             </div>
-            <div id="elo-chart" class="chart-container"></div>
+            <div class="stats-section">
+                <h2>Match Statistics</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Team Wins</h3>
+                        <div id="team-stats-chart" class="chart-container"></div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-
     <script type="module" src="js/stats.js"></script>
 </body>
 </html>

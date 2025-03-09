@@ -21,8 +21,12 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // DOM Elements
-const playerSelect = document.getElementById('player-select');
+const playerCheckboxes = document.getElementById('player-checkboxes');
 const chartContainer = document.getElementById('elo-chart');
+const teamStatsChart = document.getElementById('team-stats-chart');
+const playerStatsChart = document.getElementById('player-stats-chart');
+const positionChart = document.getElementById('position-chart');
+let selectedPlayers = new Set();
 
 // Colors for different players
 const colors = [
@@ -39,16 +43,34 @@ async function loadPlayers() {
         name: doc.data().name
     }));
 
-    // Populate player select
+    // Create checkbox for each player
+    playerCheckboxes.innerHTML = '';
     players.forEach(player => {
-        const option = document.createElement('option');
-        option.value = player.id;
-        option.textContent = player.name;
-        playerSelect.appendChild(option);
+        const label = document.createElement('label');
+        label.className = 'player-checkbox';
+        
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = player.id;
+        checkbox.addEventListener('change', () => {
+            if (checkbox.checked) {
+                selectedPlayers.add(player.id);
+            } else {
+                selectedPlayers.delete(player.id);
+            }
+            updateChart();
+        });
+
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(player.name));
+        playerCheckboxes.appendChild(label);
     });
 
-    // Convert emojis
-    twemoji.parse(playerSelect);
+    // Parse emojis
+    twemoji.parse(playerCheckboxes);
+    
+    // Update chart initially with no players selected
+    updateChart();
 }
 
 async function loadEloHistory(selectedPlayers) {
@@ -84,30 +106,65 @@ async function loadEloHistory(selectedPlayers) {
     return Object.values(playerData);
 }
 
+async function loadPositionWins(selectedPlayers) {
+    const matchesRef = collection(db, "matches");
+    const snapshot = await getDocs(matchesRef);
+
+    // Initialize data structure for each player's position wins
+    const playerPositionWins = {};
+    selectedPlayers.forEach(playerId => {
+        playerPositionWins[playerId] = {
+            position0: 0,
+            position1: 0,
+            name: playerId
+        };
+    });
+
+    // Process matches
+    snapshot.docs.forEach(doc => {
+        const match = doc.data();
+        const winningTeam = match.team1Wins ? match.team1Players : match.team2Players;
+
+        selectedPlayers.forEach(playerId => {
+            const position = winningTeam.indexOf(playerId);
+            if (position === 0) {
+                playerPositionWins[playerId].position0++;
+            } else if (position === 1) {
+                playerPositionWins[playerId].position1++;
+            }
+        });
+    });
+
+    return Object.values(playerPositionWins);
+}
+
 async function updateChart() {
-    const selectedPlayers = Array.from(playerSelect.selectedOptions).map(option => option.value);
-    
-    if (selectedPlayers.length === 0) {
-        chartContainer.innerHTML = '<p>Please select at least one player</p>';
+    if (selectedPlayers.size === 0) {
+        // Show empty charts with messages
+        const emptyLayout = {
+            title: 'Select players to view statistics',
+            xaxis: { title: 'No data' },
+            yaxis: { title: 'No data' },
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            font: {
+                color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : '#000'
+            }
+        };
+        Plotly.newPlot(chartContainer, [], emptyLayout);
+        Plotly.newPlot(positionChart, [], emptyLayout);
         return;
     }
 
-    const data = await loadEloHistory(selectedPlayers);
-    
-    // Assign colors to traces
-    data.forEach((trace, i) => {
+    // Update Elo history chart
+    const eloData = await loadEloHistory(Array.from(selectedPlayers));
+    eloData.forEach((trace, i) => {
         trace.line = { color: colors[i % colors.length] };
     });
 
-    const layout = {
-        title: 'Player Elo History',
-        xaxis: {
-            title: 'Date',
-            type: 'date'
-        },
-        yaxis: {
-            title: 'Elo Rating'
-        },
+    const eloLayout = {
+        xaxis: { title: 'Date', type: 'date' },
+        yaxis: { title: 'Elo Rating' },
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
         font: {
@@ -115,11 +172,30 @@ async function updateChart() {
         }
     };
 
-    Plotly.newPlot(chartContainer, data, layout);
-}
+    // Update Position wins chart
+    const positionData = await loadPositionWins(Array.from(selectedPlayers));
+    const positionTraces = positionData.map((player, i) => ({
+        x: ['Front', 'Back'],
+        y: [player.position0, player.position1],
+        name: player.name,
+        type: 'bar',
+        marker: { color: colors[i % colors.length] }
+    }));
 
-// Event Listeners
-playerSelect.addEventListener('change', updateChart);
+    const positionLayout = {
+        barmode: 'group',
+        xaxis: { title: 'Position' },
+        yaxis: { title: 'Number of Wins' },
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: {
+            color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : '#000'
+        }
+    };
+
+    Plotly.newPlot(chartContainer, eloData, eloLayout);
+    Plotly.newPlot(positionChart, positionTraces, positionLayout);
+}
 
 // Theme switcher
 const toggleSwitch = document.querySelector('.theme-switch input[type="checkbox"]');
@@ -151,3 +227,100 @@ if (currentTheme) {
 
 // Initialize
 loadPlayers();
+
+async function loadMatchStatistics() {
+    const matchesRef = collection(db, "matches");
+    const snapshot = await getDocs(matchesRef);
+    
+    const stats = {
+        team1Wins: 0,
+        team2Wins: 0
+    };
+
+    snapshot.docs.forEach(doc => {
+        const match = doc.data();
+        console.log('Processing match:', match);
+
+        // Count team wins based on team1Wins boolean
+        if (match.team1Wins === true) {
+            stats.team1Wins++;
+        } else {
+            stats.team2Wins++;
+        }
+    });
+
+    console.log('Final stats:', stats);
+    displayTeamStats(stats);
+}
+
+function displayTeamStats(stats) {
+    if (!teamStatsChart) {
+        console.error('Team stats chart container not found!');
+        return;
+    }
+    console.log('Displaying team stats:', stats);
+    const data = [{
+        x: ['Team Black', 'Team Gray'],
+        y: [stats.team1Wins, stats.team2Wins],
+        type: 'bar',
+        marker: {
+            color: ['#000000', '#808080']
+        }
+    }];
+
+    const layout = {
+        title: 'Wins by Team',
+        xaxis: {
+            title: 'Team'
+        },
+        yaxis: {
+            title: 'Number of Wins'
+        },
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: {
+            color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : '#000'
+        }
+    };
+
+    Plotly.newPlot(teamStatsChart, data, layout);
+}
+
+function displayPlayerStats(stats) {
+    if (!playerStatsChart) {
+        console.error('Player stats chart container not found!');
+        return;
+    }
+    console.log('Displaying player stats:', stats);
+    const data = [{
+        x: ['Player 1', 'Player 2'],
+        y: [stats.player1Wins, stats.player2Wins],
+        type: 'bar',
+        marker: {
+            color: ['#FF9800', '#9C27B0']
+        }
+    }];
+
+    const layout = {
+        title: 'Wins by Player Position',
+        xaxis: {
+            title: 'Player Position'
+        },
+        yaxis: {
+            title: 'Number of Wins'
+        },
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: {
+            color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : '#000'
+        }
+    };
+
+    Plotly.newPlot(playerStatsChart, data, layout);
+}
+
+// Update the initialization
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadPlayers();
+    await loadMatchStatistics();  // Make sure this runs
+});

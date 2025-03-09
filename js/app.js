@@ -87,8 +87,14 @@ async function handleAddPlayer(event) {
     event.preventDefault();
 
     const playerName = playerNameInput.value.trim();
+    const playerPassword = document.getElementById('player-password').value;
     const playerFlag = document.getElementById('player-flag').value;
     const playerRating = parseInt(playerRatingInput.value) || 1200;
+
+    if (!playerName || !playerPassword) {
+        alert('Please enter both player name and password');
+        return;
+    }
 
     console.log("Attempting to add player:", playerName, "with rating:", playerRating);
 
@@ -119,7 +125,8 @@ async function handleAddPlayer(event) {
         rating: playerRating, 
         matches: 0, 
         wins: 0, 
-        losses: 0 
+        losses: 0,
+        password: playerPassword
     };
 
     try {
@@ -135,6 +142,7 @@ async function handleAddPlayer(event) {
         
         // Clear form
         playerNameInput.value = '';
+        document.getElementById('player-password').value = '';
         playerRatingInput.value = '1200';
         document.getElementById('player-flag').value = '';
     } catch (error) {
@@ -392,6 +400,8 @@ async function updatePlayerList() {
                 <span class="stats">${data.wins}W - ${data.losses}L</span>
                 <span class="ratio">${winRate}%</span>
             `;
+            li.style.cursor = 'pointer';
+            li.onclick = () => window.location.href = `player-profile.html?id=${data.id}`;
             playerList.appendChild(li);
         });
 

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Player Profile - Donders Foosball League</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/twemoji@latest/dist/twemoji.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Player Profile</h1>
+            <nav class="nav-menu">
+                <a href="index.html">Home</a>
+                <a href="stats.html">Stats</a>
+            </nav>
+            <div class="theme-switch-wrapper">
+                <label class="theme-switch" for="checkbox">
+                    <input type="checkbox" id="checkbox" />
+                    <div class="slider round">
+                        <svg class="sun" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                        <svg class="moon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </div>
+                </label>
+            </div>
+            <img src="images/donders_d_motion.svg" alt="Donders Logo" class="header-logo">
+        </header>
+
+        <div class="profile-container">
+            <div class="profile-header">
+                <div class="profile-image-container">
+                    <img id="profile-image" src="../assets/default-profile.png" alt="Profile picture">
+                    <input type="file" id="profile-image-input" accept="image/*" style="display: none;">
+                    <button id="edit-profile-image" class="edit-button">
+                        <i class="fas fa-camera"></i> Change Photo
+                    </button>
+                </div>
+                <div class="profile-info">
+                    <h1 id="player-name"></h1>
+                    <div class="bio-container">
+                        <p id="player-bio"></p>
+                        <button id="edit-bio" class="edit-button">
+                            <i class="fas fa-edit"></i> Edit Bio
+                        </button>
+                    </div>
+                    <div id="bio-edit-modal" class="modal">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h2>Edit Bio</h2>
+                                <span class="close">&times;</span>
+                            </div>
+                            <div class="modal-body">
+                                <textarea id="bio-editor" maxlength="1000" rows="6"></textarea>
+                                <div class="char-counter">
+                                    <span id="char-count">0</span>/1000 characters
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button id="save-bio" class="btn btn-primary">Save</button>
+                                <button id="cancel-bio" class="btn btn-secondary">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            
+            <div class="profile-content">
+                <div class="performance-section">
+                    <h2>Performance</h2>
+                    <div id="elo-history"></div>
+                </div>
+                
+                <div class="matches-section">
+                    <h2>Recent Matches</h2>
+                    <ul id="player-matches"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/profile.js"></script>
+</body>
+</html>
