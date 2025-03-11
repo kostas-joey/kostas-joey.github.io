@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Donders Foosball League</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Admin Panel</h1>
+            <nav class="nav-menu">
+                <a href="index.html">Home</a>
+                <a href="stats.html">Stats</a>
+                <a href="admin.html" class="active">Admin</a>
+            </nav>
+            <img src="images/donders_d_motion.svg" alt="Donders Logo" class="header-logo">
+        </header>
+
+        <div class="admin-login" id="adminLogin">
+            <h2>Admin Login</h2>
+            <input type="password" id="adminPassword" placeholder="Enter admin password">
+            <button onclick="checkAdminPassword()">Login</button>
+        </div>
+
+        <div class="admin-panel hidden" id="adminPanel">
+            <div class="pending-players">
+                <h2>Pending Players</h2>
+                <div id="pendingPlayersList"></div>
+            </div>
+
+            <div class="pending-matches">
+                <h2>Pending Matches</h2>
+                <div id="pendingMatchesList"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module" src="js/admin.js"></script>
+</body>
+</html>

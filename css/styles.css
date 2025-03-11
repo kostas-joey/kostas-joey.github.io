@@ -1333,3 +1333,71 @@ input:checked + .slider .moon {
     width: 100%;
     height: 400px;
 }
+
+/* Add these styles at the end of your styles.css file */
+
+/* Admin Panel Styles */
+.admin-login {
+    max-width: 400px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: var(--card-bg);
+    border-radius: 8px;
+    text-align: center;
+}
+
+.admin-panel {
+    margin-top: 2rem;
+}
+
+.pending-players, .pending-matches {
+    background: var(--card-bg);
+    padding: 2rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+}
+
+.pending-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 1rem;
+}
+
+.pending-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.pending-info {
+    flex: 1;
+}
+
+.pending-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.approve-btn {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.deny-btn {
+    background: #f44336;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.hidden {
+    display: none !important;
+}

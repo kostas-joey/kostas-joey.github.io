@@ -11,9 +11,11 @@ import {
     getDocs, 
     doc, 
     getDoc,
+    setDoc,
     query,
     orderBy,
     limit,
+    onSnapshot,
     serverTimestamp,
     addDoc 
 } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
@@ -47,6 +49,11 @@ async function init() {
         
         updatePlayerList();
         setupEventListeners();
+
+        // Check for recently approved matches
+        checkRecentlyApprovedMatch();
+        setupMatchListener();
+
     } catch (error) {
         console.error("Error during initialization:", error);
     }
@@ -70,6 +77,19 @@ function setupEventListeners() {
             updatePlayersList()
         ]);
     });
+        // Listen for match approvals
+        window.addEventListener('matchApproved', async (event) => {
+            console.log("Match approved, updating displays...");
+            await Promise.all([
+                updatePlayersList(),
+                updatePlayerList(),
+                displayRecentMatches()
+            ]);
+            
+            if (event.detail.shouldCelebrate) {
+                celebrateVictory(event.detail.winners);
+            }
+        });
 }
 
 async function getPlayerFromFirestore(playerName) {
@@ -96,58 +116,39 @@ async function handleAddPlayer(event) {
         return;
     }
 
-    console.log("Attempting to add player:", playerName, "with rating:", playerRating);
+    const playerDisplayName = `${playerName} ${playerFlag}`;
 
-    if (!playerName) {
-        console.warn("Player name is empty.");
-        alert('Please enter a player name');
-        return;
-    }
-
-        // Create display name with flag
-        const playerDisplayName = `${playerName} ${playerFlag}`;
-
-    // Check if player exists in Firestore
     try {
         const playerData = await getPlayerFromFirestore(playerDisplayName);
         if (playerData) {
-            console.warn("Player already exists:", playerDisplayName);
             alert('Player already exists');
             return;
         }
-    } catch (error) {
-        console.error("Error checking player existence:", error);
-    }
 
-    // Add new player
-    const newPlayer = { 
-        name: playerDisplayName,
-        rating: playerRating, 
-        matches: 0, 
-        wins: 0, 
-        losses: 0,
-        password: playerPassword
-    };
+        // Create new player data
+        const newPlayer = { 
+            name: playerDisplayName,
+            rating: playerRating, 
+            matches: 0, 
+            wins: 0, 
+            losses: 0,
+            password: playerPassword,
+            timestamp: serverTimestamp()
+        };
 
-    try {
-        await savePlayerData(playerDisplayName, newPlayer);
-        console.log("Player added successfully:", newPlayer);
-        
-        // Reload player data to refresh our local cache
-        playerRatings = await loadPlayerData();
-        
-        // Update UI
-        updatePlayersList();
-        twemoji.parse(document.body); // Parse new content for emoji
+        // Save to pendingPlayers collection instead
+        await setDoc(doc(db, "pendingPlayers", playerDisplayName), newPlayer);
         
         // Clear form
         playerNameInput.value = '';
         document.getElementById('player-password').value = '';
         playerRatingInput.value = '1200';
         document.getElementById('player-flag').value = '';
+        
+        alert('Player submitted for approval');
     } catch (error) {
-        console.error("Failed to save player:", error);
-        alert('Failed to add player');
+        console.error("Failed to submit player:", error);
+        alert('Failed to submit player');
     }
 }
 
@@ -195,7 +196,7 @@ async function handleLogMatch() {
 
     const team1Wins = winner.value === 'team1';
     
-    // Get winning players
+    // Get player display names for the victory message
     const winners = team1Wins ? 
         [
             document.getElementById('player1').options[document.getElementById('player1').selectedIndex].text,
@@ -209,53 +210,45 @@ async function handleLogMatch() {
     const team1Players = [player1, player2];
     const team2Players = [player3, player4];
     
-    // Get initial ratings
-    const initialRatings = {
+    // Get current ratings for reference
+    const currentRatings = {
         [player1]: await getPlayerRating(player1),
         [player2]: await getPlayerRating(player2),
         [player3]: await getPlayerRating(player3),
         [player4]: await getPlayerRating(player4)
     };
 
-    await updateTeamMatch(player1, player2, player3, player4, team1Wins);
+    try {
+        // Create pending match document
+        const pendingMatch = {
+            team1Players,
+            team2Players,
+            team1Wins,
+            timestamp: serverTimestamp(),
+            currentRatings, // Store current ratings for reference
+            status: 'pending',
+            winners: winners // Store winner names for display
+        };
 
-    // Calculate elo changes
-    const finalRatings = {
-        [player1]: await getPlayerRating(player1),
-        [player2]: await getPlayerRating(player2),
-        [player3]: await getPlayerRating(player3),
-        [player4]: await getPlayerRating(player4)
-    };
+        // Save to pendingMatches collection
+        await addDoc(collection(db, "pendingMatches"), pendingMatch);
+        
+        // Show confirmation message
+        alert('Match submitted for approval');
 
-    const eloChanges = Object.entries(finalRatings).map(([player, rating]) => ({
-        player,
-        change: rating - initialRatings[player]
-    }));
+        // Reset form
+        ['player1', 'player2', 'player3', 'player4'].forEach(id => {
+            const select = document.getElementById(id);
+            if (select) select.value = '';
+        });
 
-    // Save match history
-    await saveMatchHistory({
-        team1Players,
-        team2Players,
-        team1Wins,
-        eloChanges
-    });
+        const checkedRadio = document.querySelector('input[name="winner"]:checked');
+        if (checkedRadio) checkedRadio.checked = false;
 
-    // Update recent matches display
-    await displayRecentMatches();
-    
-    // Celebrate victory
-    celebrateVictory(winners);
-
-    // Reset form safely
-    ['player1', 'player2', 'player3', 'player4'].forEach(id => {
-        const select = document.getElementById(id);
-        if (select) select.value = '';
-    });
-
-    // Uncheck winner radio button safely
-    const checkedRadio = document.querySelector('input[name="winner"]:checked');
-    if (checkedRadio) checkedRadio.checked = false;
-
+    } catch (error) {
+        console.error("Error submitting match:", error);
+        alert('Failed to submit match. Please try again.');
+    }
 }
 
 async function updateTeamMatch(player1, player2, player3, player4, team1Wins) {
@@ -267,18 +260,18 @@ async function updateTeamMatch(player1, player2, player3, player4, team1Wins) {
     const player3Rating = await getPlayerRating(player3);
     const player4Rating = await getPlayerRating(player4);
 
-    // Calculate team averages (only for expected score calculation)
-    const team1Avg = (player1Rating + player2Rating) / 2;
-    const team2Avg = (player3Rating + player4Rating) / 2;
+    // Calculate team averages using the shared function
+    const team1Avg = averageTeamElo(player1Rating, player2Rating);
+    const team2Avg = averageTeamElo(player3Rating, player4Rating);
 
     console.log(`Team Averages - Team1: ${team1Avg}, Team2: ${team2Avg}`);
 
     // Calculate new individual ratings using team averages for expected score
     const result = team1Wins ? 1 : 0;
-    const newPlayer1Rating = calculateElo(player1Rating, team2Avg, result);
-    const newPlayer2Rating = calculateElo(player2Rating, team2Avg, result);
-    const newPlayer3Rating = calculateElo(player3Rating, team1Avg, 1 - result);
-    const newPlayer4Rating = calculateElo(player4Rating, team1Avg, 1 - result);
+    const newPlayer1Rating = Math.round(calculateTeamElo(player1Rating, team1Avg, team2Avg, result));
+    const newPlayer2Rating = Math.round(calculateTeamElo(player2Rating, team1Avg, team2Avg, result));
+    const newPlayer3Rating = Math.round(calculateTeamElo(player3Rating, team2Avg, team1Avg, 1 - result));
+    const newPlayer4Rating = Math.round(calculateTeamElo(player4Rating, team2Avg, team1Avg, 1 - result));
 
     console.log("New individual ratings:", {
         [player1]: newPlayer1Rating,
@@ -466,38 +459,12 @@ document.addEventListener('change', function(event) {
     }
 });
 
-// Password protection
-const CORRECT_PASSWORD = 'balldontlie'; // Change this to your desired password
-
-function checkPassword() {
-    const password = document.getElementById('passwordInput').value;
-    if (password === CORRECT_PASSWORD) {
-        document.getElementById('loginOverlay').classList.add('hidden');
-        localStorage.setItem('foosballAuthenticated', 'true');
-        init(); // Initialize the app
-    } else {
-        alert('Incorrect password');
-    }
-}
-
-// Check if already authenticated
-function checkAuthentication() {
-    const isAuthenticated = localStorage.getItem('foosballAuthenticated') === 'true';
-    if (isAuthenticated) {
-        document.getElementById('loginOverlay').classList.add('hidden');
-        init(); // Initialize the app
-    }
-}
-
 // Modify the DOMContentLoaded event listener
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("DOM loaded, checking authentication...");
-    checkAuthentication();
+    console.log("DOM loaded, initializing app...");
+    init();
 });
 
-
-// Add to window object for onclick access
-window.checkPassword = checkPassword;
 
 // Add function to display match history
 async function displayRecentMatches() {
@@ -578,4 +545,58 @@ if (currentTheme) {
     if (currentTheme === 'dark') {
         toggleSwitch.checked = true;
     }
+}
+
+// Add this new function to check for recently approved matches
+function checkRecentlyApprovedMatch() {
+    const lastMatchStr = localStorage.getItem('lastApprovedMatch');
+    if (lastMatchStr) {
+        const lastMatch = JSON.parse(lastMatchStr);
+        const now = Date.now();
+        
+        // Check if this match hasn't been celebrated yet
+        if (lastMatch.shouldCelebrate && !lastMatch.celebrated) {
+            console.log("Celebrating match victory...", lastMatch);
+            celebrateVictory(lastMatch.winners);
+            
+            // Mark as celebrated
+            lastMatch.celebrated = true;
+            localStorage.setItem('lastApprovedMatch', JSON.stringify(lastMatch));
+        }
+    }
+}
+
+// Add real-time listener for matches collection
+function setupMatchListener() {
+    console.log("Setting up match listener...");
+    const matchesRef = collection(db, "matches");
+    const q = query(matchesRef, orderBy("timestamp", "desc"), limit(1));
+
+    let lastCelebratedMatchId = localStorage.getItem('lastCelebratedMatchId');
+    
+    onSnapshot(q, (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+            if (change.type === "added") {
+                const match = change.doc.data();
+                const matchId = change.doc.id; // Get the document ID
+                console.log("New match detected:", match);
+                
+                // Update all displays
+                Promise.all([
+                    updatePlayersList(),
+                    displayRecentMatches()
+                ]).then(() => {
+                    // Only celebrate if this match hasn't been celebrated before
+                    if (matchId !== lastCelebratedMatchId) {
+                        const winners = match.team1Wins ? match.team1Players : match.team2Players;
+                        celebrateVictory(winners);
+                        
+                        // Store the celebrated match ID
+                        localStorage.setItem('lastCelebratedMatchId', matchId);
+                        lastCelebratedMatchId = matchId;
+                    }
+                });
+            }
+        });
+    });
 }
