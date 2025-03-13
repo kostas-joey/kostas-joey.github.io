@@ -1401,3 +1401,185 @@ input:checked + .slider .moon {
 .hidden {
     display: none !important;
 }
+
+/* Enhanced styles for Elo changes */
+.elo-changes {
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.elo-change {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    display: inline-block;
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.elo-positive {
+    border-left: 3px solid #28a745;
+}
+
+.elo-negative {
+    border-left: 3px solid #dc3545;
+}
+
+.change-value {
+    font-weight: bold;
+    margin-left: 3px;
+}
+
+/* For dark theme compatibility */
+[data-theme='dark'] .elo-change {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Updated match display styling */
+.match-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.match-outcome {
+    font-weight: bold;
+    font-size: 0.9em;
+}
+
+.match-date {
+    color: #666;
+    font-size: 0.8em;
+}
+
+.elo-changes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 5px;
+}
+
+.elo-change {
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 0.85em;
+    display: inline-block;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-left-width: 3px;
+    border-left-style: solid;
+}
+
+.match-winner {
+    font-weight: bold;
+}
+
+.elo-positive {
+    border-left-color: #28a745;
+}
+
+.elo-negative {
+    border-left-color: #dc3545;
+}
+
+.change-value {
+    font-weight: bold;
+    margin-left: 3px;
+}
+
+/* Dark mode compatibility */
+[data-theme='dark'] .elo-change {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='dark'] .match-date {
+    color: #aaa;
+}
+
+/* Match history styling */
+#matches-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+}
+
+.match-entry {
+    border-bottom: 1px solid #eaeaea;
+    padding: 12px 0;
+}
+
+.match-entry:last-child {
+    border-bottom: none;
+}
+
+.match-content {
+    width: 100%;
+}
+
+.match-date {
+    color: #666;
+    font-size: 0.85em;
+    margin-bottom: 8px;
+    text-align: right;
+}
+
+.elo-changes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+}
+
+.elo-change {
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    flex-grow: 1;
+    min-width: calc(50% - 8px); /* Makes two per row on desktop */
+    box-sizing: border-box;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-left-width: 3px;
+    border-left-style: solid;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.match-winner {
+    font-weight: bold;
+}
+
+.elo-positive {
+    border-left-color: #28a745;
+}
+
+.elo-negative {
+    border-left-color: #dc3545;
+}
+
+.change-value {
+    font-weight: bold;
+    margin-left: 3px;
+}
+
+/* For dark theme compatibility */
+[data-theme='dark'] .elo-change {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='dark'] .match-date {
+    color: #aaa;
+}
+
+[data-theme='dark'] .match-entry {
+    border-bottom-color: #333;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .elo-change {
+        min-width: 100%;
+    }
+}

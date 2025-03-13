@@ -479,35 +479,38 @@ async function displayRecentMatches() {
         querySnapshot.forEach((doc) => {
             const match = doc.data();
             const date = match.timestamp.toDate();
+            const formattedDate = date.toLocaleString();
             
             const li = document.createElement('li');
+            li.className = 'match-entry';
             li.innerHTML = `
-                <div class="match-result">
-                    <div class="match-teams">
-                        <span class="${match.team1Wins ? 'match-winner' : 'match-loser'}">
-                            ${match.team1Players.join(' & ')}
-                        </span>
-                        vs
-                        <span class="${match.team1Wins ? 'match-loser' : 'match-winner'}">
-                            ${match.team2Players.join(' & ')}
-                        </span>
+                <div class="match-content">
+                    <div class="match-date">${formattedDate}</div>
+                    <div class="elo-changes">
+                        ${match.eloChanges.map(change => {
+                            // Check if player was on winning team
+                            const isWinner = (match.team1Wins && match.team1Players.includes(change.player)) || 
+                                           (!match.team1Wins && match.team2Players.includes(change.player));
+                            const hasDetailedRatings = change.ratingBefore !== undefined && change.ratingAfter !== undefined;
+                            const changeValue = change.change || (hasDetailedRatings ? change.ratingAfter - change.ratingBefore : 0);
+                            const direction = changeValue > 0 ? 'elo-positive' : 'elo-negative';
+                            
+                            return `<span class="elo-change ${direction} ${isWinner ? 'match-winner' : 'match-loser'}">
+                                ${change.player}: ${hasDetailedRatings ? 
+                                  `${Math.round(change.ratingBefore)} → ${Math.round(change.ratingAfter)}` : 
+                                  `${changeValue > 0 ? '+' : ''}${Math.round(changeValue)}`}
+                                ${hasDetailedRatings ? 
+                                  `<span class="change-value">(${changeValue > 0 ? '+' : ''}${Math.round(changeValue)})</span>` : 
+                                  ''}
+                            </span>`;
+                        }).join('')}
                     </div>
-                    <div class="match-meta">
-                        ${date.toLocaleString()}
-                    </div>
-                </div>
-                <div class="elo-changes">
-                    ${match.eloChanges.map(change => 
-                        `<span class="elo-change ${change.change > 0 ? 'elo-positive' : 'elo-negative'}">
-                            ${change.player}: ${change.change > 0 ? '+' : ''}${Math.round(change.change)}
-                        </span>`
-                    ).join(' ')}
                 </div>
             `;
             matchesList.appendChild(li);
         });
 
-        convertEmojis(playerList);
+        convertEmojis(matchesList);
 
     } catch (error) {
         console.error("Error displaying match history:", error);
