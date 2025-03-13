@@ -183,26 +183,30 @@ window.approveMatch = async function(matchId) {
             Math.round(calculateTeamElo(currentRatings[team2Players[1]], team2Avg, team1Avg, 1 - result))
         ];
 
-        // Create eloChanges array in the required format
+        // Create enhanced eloChanges array with before and after ratings
         const eloChanges = [
             {
                 player: team1Players[0],
-                rating: newTeam1Ratings[0],
+                ratingBefore: currentRatings[team1Players[0]],  // Add the before rating
+                ratingAfter: newTeam1Ratings[0],               // Rename to ratingAfter for clarity
                 change: newTeam1Ratings[0] - currentRatings[team1Players[0]]
             },
             {
                 player: team1Players[1],
-                rating: newTeam1Ratings[1],
+                ratingBefore: currentRatings[team1Players[1]],
+                ratingAfter: newTeam1Ratings[1],
                 change: newTeam1Ratings[1] - currentRatings[team1Players[1]]
             },
             {
                 player: team2Players[0],
-                rating: newTeam2Ratings[0],
+                ratingBefore: currentRatings[team2Players[0]],
+                ratingAfter: newTeam2Ratings[0],
                 change: newTeam2Ratings[0] - currentRatings[team2Players[0]]
             },
             {
                 player: team2Players[1],
-                rating: newTeam2Ratings[1],
+                ratingBefore: currentRatings[team2Players[1]],
+                ratingAfter: newTeam2Ratings[1], 
                 change: newTeam2Ratings[1] - currentRatings[team2Players[1]]
             }
         ];
