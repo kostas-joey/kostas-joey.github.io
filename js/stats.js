@@ -110,7 +110,10 @@ async function loadEloHistory(selectedPlayers) {
                 matchCounts[playerId]++;
                 
                 playerData[playerId].x.push(matchCounts[playerId]);
-                playerData[playerId].y.push(Math.round(change.rating));
+
+               // Use ratingAfter if available, otherwise fall back to rating
+                const ratingToUse = change.ratingAfter !== undefined ? change.ratingAfter : change.rating;
+                playerData[playerId].y.push(Math.round(ratingToUse));
                 playerData[playerId].text.push(formattedDate);
             }
         });

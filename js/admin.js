@@ -189,24 +189,28 @@ window.approveMatch = async function(matchId) {
                 player: team1Players[0],
                 ratingBefore: currentRatings[team1Players[0]],  // Add the before rating
                 ratingAfter: newTeam1Ratings[0],               // Rename to ratingAfter for clarity
+                rating: newTeam1Ratings[0], // Add this line for backward compatibility
                 change: newTeam1Ratings[0] - currentRatings[team1Players[0]]
             },
             {
                 player: team1Players[1],
                 ratingBefore: currentRatings[team1Players[1]],
                 ratingAfter: newTeam1Ratings[1],
+                rating: newTeam1Ratings[1], // Add this line for backward compatibility
                 change: newTeam1Ratings[1] - currentRatings[team1Players[1]]
             },
             {
                 player: team2Players[0],
                 ratingBefore: currentRatings[team2Players[0]],
                 ratingAfter: newTeam2Ratings[0],
+                rating: newTeam2Ratings[0], // Add this line for backward compatibility
                 change: newTeam2Ratings[0] - currentRatings[team2Players[0]]
             },
             {
                 player: team2Players[1],
                 ratingBefore: currentRatings[team2Players[1]],
                 ratingAfter: newTeam2Ratings[1], 
+                rating: newTeam2Ratings[1], // Add this line for backward compatibility
                 change: newTeam2Ratings[1] - currentRatings[team2Players[1]]
             }
         ];
