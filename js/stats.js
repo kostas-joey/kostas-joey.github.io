@@ -82,23 +82,36 @@ async function loadEloHistory(selectedPlayers) {
     const playerData = {};
     selectedPlayers.forEach(playerId => {
         playerData[playerId] = {
-            x: [], // timestamps
+            x: [], // match indices
             y: [], // elo ratings
+            text: [], // timestamps for hover
             name: playerId,
             type: 'scatter',
-            mode: 'lines+markers'
+            mode: 'lines+markers',
+            hovertemplate: 'Match %{x}<br>Rating: %{y}<br>Date: %{text}<extra></extra>'
         };
+    });
+
+    // Track number of matches per player
+    const matchCounts = {};
+    selectedPlayers.forEach(playerId => {
+        matchCounts[playerId] = 0;
     });
 
     // Process matches chronologically
     snapshot.docs.forEach(doc => {
         const match = doc.data();
         const timestamp = match.timestamp.toDate();
+        const formattedDate = timestamp.toLocaleDateString();
 
         match.eloChanges.forEach(change => {
             if (selectedPlayers.includes(change.player)) {
-                playerData[change.player].x.push(timestamp);
-                playerData[change.player].y.push(Math.round(change.rating));
+                const playerId = change.player;
+                matchCounts[playerId]++;
+                
+                playerData[playerId].x.push(matchCounts[playerId]);
+                playerData[playerId].y.push(Math.round(change.rating));
+                playerData[playerId].text.push(formattedDate);
             }
         });
     });
@@ -110,12 +123,12 @@ async function loadPositionWins(selectedPlayers) {
     const matchesRef = collection(db, "matches");
     const snapshot = await getDocs(matchesRef);
 
-    // Initialize data structure for each player's position wins
-    const playerPositionWins = {};
+    // Initialize data structure for each player's position stats
+    const playerPositionStats = {};
     selectedPlayers.forEach(playerId => {
-        playerPositionWins[playerId] = {
-            position0: 0,
-            position1: 0,
+        playerPositionStats[playerId] = {
+            position0: { wins: 0, losses: 0 },
+            position1: { wins: 0, losses: 0 },
             name: playerId
         };
     });
@@ -124,18 +137,46 @@ async function loadPositionWins(selectedPlayers) {
     snapshot.docs.forEach(doc => {
         const match = doc.data();
         const winningTeam = match.team1Wins ? match.team1Players : match.team2Players;
+        const losingTeam = match.team1Wins ? match.team2Players : match.team1Players;
 
+        // Track wins and losses by position
         selectedPlayers.forEach(playerId => {
-            const position = winningTeam.indexOf(playerId);
-            if (position === 0) {
-                playerPositionWins[playerId].position0++;
-            } else if (position === 1) {
-                playerPositionWins[playerId].position1++;
+            // Check wins
+            const winPosition = winningTeam.indexOf(playerId);
+            if (winPosition === 0) {
+                playerPositionStats[playerId].position0.wins++;
+            } else if (winPosition === 1) {
+                playerPositionStats[playerId].position1.wins++;
+            }
+            
+            // Check losses
+            const losePosition = losingTeam.indexOf(playerId);
+            if (losePosition === 0) {
+                playerPositionStats[playerId].position0.losses++;
+            } else if (losePosition === 1) {
+                playerPositionStats[playerId].position1.losses++;
             }
         });
     });
 
-    return Object.values(playerPositionWins);
+    // Calculate win rates for each position
+    return Object.values(playerPositionStats).map(player => {
+        // Calculate front position (position0) win rate
+        const pos0Total = player.position0.wins + player.position0.losses;
+        const pos0Rate = pos0Total > 0 ? (player.position0.wins / pos0Total) * 100 : 0;
+        
+        // Calculate back position (position1) win rate
+        const pos1Total = player.position1.wins + player.position1.losses;
+        const pos1Rate = pos1Total > 0 ? (player.position1.wins / pos1Total) * 100 : 0;
+        
+        return {
+            name: player.name,
+            position0Rate: Math.round(pos0Rate),
+            position1Rate: Math.round(pos1Rate),
+            position0Total: pos0Total,
+            position1Total: pos1Total
+        };
+    });
 }
 
 async function updateChart() {
@@ -143,8 +184,14 @@ async function updateChart() {
         // Show empty charts with messages
         const emptyLayout = {
             title: 'Select players to view statistics',
-            xaxis: { title: 'No data' },
-            yaxis: { title: 'No data' },
+            xaxis: { 
+                title: 'No data',
+                showgrid: false
+            },
+            yaxis: { 
+                title: 'No data',
+                showgrid: false
+            },
             paper_bgcolor: 'rgba(0,0,0,0)',
             plot_bgcolor: 'rgba(0,0,0,0)',
             font: {
@@ -163,8 +210,15 @@ async function updateChart() {
     });
 
     const eloLayout = {
-        xaxis: { title: 'Date', type: 'date' },
-        yaxis: { title: 'Elo Rating' },
+        xaxis: { 
+            title: 'Match Number',
+            tickmode: 'linear',
+            showgrid: false
+        },
+        yaxis: { 
+            title: 'Elo Rating',
+            showgrid: false 
+        },
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
         font: {
@@ -172,20 +226,32 @@ async function updateChart() {
         }
     };
 
-    // Update Position wins chart
+    // Update Position wins chart - now showing win/loss ratio
     const positionData = await loadPositionWins(Array.from(selectedPlayers));
     const positionTraces = positionData.map((player, i) => ({
         x: ['Front', 'Back'],
-        y: [player.position0, player.position1],
+        y: [player.position0Rate, player.position1Rate],
         name: player.name,
         type: 'bar',
+        text: [
+            `${player.position0Rate}% (${player.position0Total} games)`, 
+            `${player.position1Rate}% (${player.position1Total} games)`
+        ],
+        hovertemplate: '%{x}: %{text}<extra></extra>',
         marker: { color: colors[i % colors.length] }
     }));
 
     const positionLayout = {
         barmode: 'group',
-        xaxis: { title: 'Position' },
-        yaxis: { title: 'Number of Wins' },
+        xaxis: { 
+            title: 'Position',
+            showgrid: false
+        },
+        yaxis: { 
+            title: 'Win Rate (%)',
+            range: [0, 100],
+            showgrid: false
+        },
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
         font: {
@@ -205,14 +271,29 @@ function switchTheme(e) {
     document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
     
-    // Update chart colors if it exists
+    // Update all charts with new theme colors
+    const layout = {
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        xaxis: { showgrid: false },
+        yaxis: { showgrid: false },
+        font: { color: isDark ? '#fff' : '#000' }
+    };
+    
     if (chartContainer.data) {
-        const layout = {
-            paper_bgcolor: 'rgba(0,0,0,0)',
-            plot_bgcolor: 'rgba(0,0,0,0)',
-            font: { color: isDark ? '#fff' : '#000' }
-        };
         Plotly.relayout(chartContainer, layout);
+    }
+    
+    if (positionChart.data) {
+        Plotly.relayout(positionChart, layout);
+    }
+    
+    if (teamStatsChart && teamStatsChart.data) {
+        Plotly.relayout(teamStatsChart, layout);
+    }
+    
+    if (playerStatsChart && playerStatsChart.data) {
+        Plotly.relayout(playerStatsChart, layout);
     }
 }
 
@@ -271,10 +352,12 @@ function displayTeamStats(stats) {
     const layout = {
         title: 'Wins by Team',
         xaxis: {
-            title: 'Team'
+            title: 'Team',
+            showgrid: false
         },
         yaxis: {
-            title: 'Number of Wins'
+            title: 'Number of Wins',
+            showgrid: false
         },
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
@@ -304,10 +387,12 @@ function displayPlayerStats(stats) {
     const layout = {
         title: 'Wins by Player Position',
         xaxis: {
-            title: 'Player Position'
+            title: 'Player Position',
+            showgrid: false
         },
         yaxis: {
-            title: 'Number of Wins'
+            title: 'Number of Wins',
+            showgrid: false
         },
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
