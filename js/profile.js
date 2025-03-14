@@ -45,6 +45,8 @@ function switchTheme(e) {
         const layout = {
             paper_bgcolor: 'rgba(0,0,0,0)',
             plot_bgcolor: 'rgba(0,0,0,0)',
+            xaxis: { showgrid: false },
+            yaxis: { showgrid: false },
             font: { color: isDark ? '#fff' : '#000' }
         };
         Plotly.relayout('elo-history', layout);
@@ -172,24 +174,32 @@ async function loadEloHistory() {
 
         // Initialize data structure
         const data = [{
-            x: [], // timestamps
+            x: [], // will be match numbers
             y: [], // elo ratings
+            text: [], // timestamps for hover info
             name: 'Elo Rating',
             type: 'scatter',
             mode: 'lines+markers',
-            line: { color: '#dc3545' }
+            line: { color: '#dc3545' },
+            hovertemplate: 'Match %{x}<br>Rating: %{y}<br>Date: %{text}<extra></extra>'
         }];
+
+        // Track match count for this player
+        let matchCount = 0;
 
         // Process matches chronologically
         snapshot.docs.forEach(doc => {
             const match = doc.data();
             const timestamp = match.timestamp.toDate();
+            const formattedDate = timestamp.toLocaleDateString();
             
             // Find this player's rating change
             match.eloChanges.forEach(change => {
                 if (change.player === playerId) {
-                    data[0].x.push(timestamp);
+                    matchCount++;
+                    data[0].x.push(matchCount); // Use match number instead of timestamp
                     data[0].y.push(Math.round(change.rating));
+                    data[0].text.push(formattedDate); // Store date for hover information
                 }
             });
         });
@@ -197,13 +207,13 @@ async function loadEloHistory() {
         const layout = {
             title: 'Elo Rating History',
             xaxis: {
-                title: 'Date',
-                type: 'date',
-                gridcolor: document.documentElement.getAttribute('data-theme') === 'dark' ? '#444' : '#ddd'
+                title: 'Match Number',
+                tickmode: 'linear', // Ensures even spacing between points
+                showgrid: false
             },
             yaxis: {
                 title: 'Elo Rating',
-                gridcolor: document.documentElement.getAttribute('data-theme') === 'dark' ? '#444' : '#ddd'
+                showgrid: false
             },
             paper_bgcolor: 'rgba(0,0,0,0)',
             plot_bgcolor: 'rgba(0,0,0,0)',
