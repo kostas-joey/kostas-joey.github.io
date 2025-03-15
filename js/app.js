@@ -677,7 +677,7 @@ function findNextBeadToDrop(beads) {
 function positionBeadsAtTop(beads) {
     beads.forEach((bead, i) => {
         // Position beads at top with slight offset for visibility
-        bead.style.top = `${i * 15}px`;
+        bead.style.top = `${i * 10}px`;
         bead.dataset.scored = 'false';
     });
 }
@@ -687,14 +687,14 @@ function dropBead(bead) {
     // The CSS will handle actual positioning via the [data-scored="true"] selector
     // Calculate offset for smoother stacking at bottom (we're setting a CSS variable)
     const position = parseInt(bead.dataset.position);
-    const offsetPx = (10 - position) * 15; // Spread beads at bottom
+    const offsetPx = (10 - position) * 10; // Spread beads at bottom
     bead.style.setProperty('--offset-px', `${offsetPx}px`);
 }
 
 function resetBeads(beads) {
     beads.forEach((bead, i) => {
         bead.dataset.scored = 'false';
-        bead.style.top = `${i * 15}px`; // Reset to top position with offset
+        bead.style.top = `${i * 10}px`; // Reset to top position with offset
     });
 }
 
