@@ -1583,3 +1583,125 @@ input:checked + .slider .moon {
         min-width: 100%;
     }
 }
+
+/* Bead Scorer Styles */
+.bead-scorer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 15px 0;
+}
+
+.bead-scorer label {
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+.bead-container {
+    position: relative;
+    height: 200px;
+    width: 30px;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 5px;
+}
+
+.score-bar {
+    position: absolute;
+    height: 100%;
+    width: 4px;
+    background-color: var(--border-color);
+    border-radius: 2px;
+    z-index: 1;
+}
+
+.beads {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    z-index: 2;
+}
+
+.bead {
+    width: 20px;
+    height: 20px;
+    background: radial-gradient(circle at 40% 40%, 
+                               var(--accent-color) 0%, 
+                               var(--primary-color) 100%);
+    border-radius: 50%;
+    position: absolute;
+    left: 5px;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s ease, top 0.5s cubic-bezier(.25,.82,.25,1);
+    transform: translateY(0);
+}
+
+.team1 .bead {
+    background: radial-gradient(circle at 40% 40%, #505050 0%, #222 100%);
+}
+
+.team2 .bead {
+    background: radial-gradient(circle at 40% 40%, #d0d0d0 0%, #909090 100%);
+}
+
+.bead:hover {
+    transform: scale(1.1);
+}
+
+.bead[data-scored="true"] {
+    top: calc(100% - 20px - var(--offset-px)) !important;
+}
+
+.score-display {
+    font-size: 24px;
+    font-weight: bold;
+    margin: 5px 0;
+    color: var(--text-color);
+}
+
+.reset-score {
+    padding: 4px 8px;
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background-color 0.2s;
+}
+
+.reset-score:hover {
+    background-color: var(--primary-color);
+}
+
+@media screen and (max-width: 768px) {
+    .bead-container {
+        height: 160px;
+    }
+}
+
+/* Add these styles at the end of your file */
+
+.match-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.match-score {
+    font-weight: bold;
+    font-size: 1.2em;
+    color: var(--text-color);
+    background-color: rgba(0, 0, 0, 0.05);
+    padding: 3px 10px;
+    border-radius: 4px;
+}
+
+[data-theme='dark'] .match-score {
+    background-color: rgba(255, 255, 255, 0.1);
+}

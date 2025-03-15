@@ -72,46 +72,88 @@
             </form>
         </div>
 
-        <!-- Match Logger -->
-        <div class="match-logger">
-            <h2>Add Match</h2>
-            
-            <!-- Replace the text inputs with select elements -->
-            <div class="teams-container">
-                <div class="team team1">
-                    <h3> </h3>
-                    <div class="player-input">
-                        <label for="player1">Front Player</label>
-                        <select id="player1" required>
-                            <option value="">Select Player</option>
-                        </select>
-                    </div>
-                    <div class="player-input">
-                        <label for="player2">Back Player</label>
-                        <select id="player2" required>
-                            <option value="">Select Player</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="versus">VS</div>
-
-                <div class="team team2">
-                    <h3> </h3>
-                    <div class="player-input">
-                        <label for="player3">Front Player</label>
-                        <select id="player3" required>
-                            <option value="">Select Player</option>
-                        </select>
-                    </div>
-                    <div class="player-input">
-                        <label for="player4">Back Player</label>
-                        <select id="player4" required>
-                            <option value="">Select Player</option>
-                        </select>
-                    </div>
-                </div>
+<!-- Match Logger -->
+<div class="match-logger">
+    <h2>Add Match</h2>
+    
+    <!-- Replace the text inputs with select elements -->
+    <div class="teams-container">
+        <div class="team team1">
+            <h3> </h3>
+            <div class="player-input">
+                <label for="player1">Front Player</label>
+                <select id="player1" required>
+                    <option value="">Select Player</option>
+                </select>
             </div>
+            <div class="bead-scorer" id="team1-bead-scorer">
+                <label>Team Black Score</label>
+                <div class="bead-container">
+                    <div class="score-bar"></div>
+                    <div class="beads">
+                        <div class="bead" data-position="1"></div>
+                        <div class="bead" data-position="2"></div>
+                        <div class="bead" data-position="3"></div>
+                        <div class="bead" data-position="4"></div>
+                        <div class="bead" data-position="5"></div>
+                        <div class="bead" data-position="6"></div>
+                        <div class="bead" data-position="7"></div>
+                        <div class="bead" data-position="8"></div>
+                        <div class="bead" data-position="9"></div>
+                        <div class="bead" data-position="10"></div>
+                    </div>
+                </div>
+                <input type="hidden" id="team1-score" value="0">
+                <div class="score-display">0</div>
+                <button type="button" class="reset-score">Reset</button>
+            </div>
+            <div class="player-input">
+                <label for="player2">Back Player</label>
+                <select id="player2" required>
+                    <option value="">Select Player</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="versus">VS</div>
+
+        <div class="team team2">
+            <h3> </h3>
+            <div class="player-input">
+                <label for="player3">Front Player</label>
+                <select id="player3" required>
+                    <option value="">Select Player</option>
+                </select>
+            </div>
+            <div class="bead-scorer" id="team2-bead-scorer">
+                <label>Team Gray Score</label>
+                <div class="bead-container">
+                    <div class="score-bar"></div>
+                    <div class="beads">
+                        <div class="bead" data-position="1"></div>
+                        <div class="bead" data-position="2"></div>
+                        <div class="bead" data-position="3"></div>
+                        <div class="bead" data-position="4"></div>
+                        <div class="bead" data-position="5"></div>
+                        <div class="bead" data-position="6"></div>
+                        <div class="bead" data-position="7"></div>
+                        <div class="bead" data-position="8"></div>
+                        <div class="bead" data-position="9"></div>
+                        <div class="bead" data-position="10"></div>
+                    </div>
+                </div>
+                <input type="hidden" id="team2-score" value="0">
+                <div class="score-display">0</div>
+                <button type="button" class="reset-score">Reset</button>
+            </div>
+            <div class="player-input">
+                <label for="player4">Back Player</label>
+                <select id="player4" required>
+                    <option value="">Select Player</option>
+                </select>
+            </div>
+        </div>
+    </div>
 
             <div class="winner-selection">
                 <h3>Select Winner</h3>

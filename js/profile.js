@@ -198,7 +198,9 @@ async function loadEloHistory() {
                 if (change.player === playerId) {
                     matchCount++;
                     data[0].x.push(matchCount); // Use match number instead of timestamp
-                    data[0].y.push(Math.round(change.rating));
+                    // Use ratingAfter if available, otherwise fall back to rating
+                    const ratingToUse = change.ratingAfter !== undefined ? change.ratingAfter : change.rating;
+                    data[0].y.push(Math.round(ratingToUse));
                     data[0].text.push(formattedDate); // Store date for hover information
                 }
             });
