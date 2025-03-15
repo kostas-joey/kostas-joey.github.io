@@ -194,6 +194,10 @@ async function handleLogMatch() {
         return;
     }
 
+    // Get scores from the hidden inputs
+    const team1Score = parseInt(document.getElementById('team1-score').value || '0');
+    const team2Score = parseInt(document.getElementById('team2-score').value || '0');
+
     const team1Wins = winner.value === 'team1';
     
     // Get player display names for the victory message
@@ -224,6 +228,8 @@ async function handleLogMatch() {
             team1Players,
             team2Players,
             team1Wins,
+            team1Score,  // Add team1 score
+            team2Score,  // Add team2 score
             timestamp: serverTimestamp(),
             currentRatings, // Store current ratings for reference
             status: 'pending',
@@ -241,6 +247,11 @@ async function handleLogMatch() {
             const select = document.getElementById(id);
             if (select) select.value = '';
         });
+
+         // Reset scores and beads
+         document.querySelector('.reset-score')?.click();
+         document.getElementById('team2-bead-scorer')?.querySelector('.reset-score')?.click();
+ 
 
         const checkedRadio = document.querySelector('input[name="winner"]:checked');
         if (checkedRadio) checkedRadio.checked = false;
@@ -463,10 +474,12 @@ document.addEventListener('change', function(event) {
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DOM loaded, initializing app...");
     init();
+    initializeBeadScorers();
 });
 
 
 // Add function to display match history
+
 async function displayRecentMatches() {
     try {
         const matchesRef = collection(db, "matches");
@@ -481,11 +494,18 @@ async function displayRecentMatches() {
             const date = match.timestamp.toDate();
             const formattedDate = date.toLocaleString();
             
+            // Create score display string
+            const scoreDisplay = match.team1Score !== undefined && match.team2Score !== undefined ? 
+                `<div class="match-score">${match.team1Score} - ${match.team2Score}</div>` : '';
+            
             const li = document.createElement('li');
             li.className = 'match-entry';
             li.innerHTML = `
                 <div class="match-content">
-                    <div class="match-date">${formattedDate}</div>
+                    <div class="match-header">
+                        <div class="match-date">${formattedDate}</div>
+                        ${scoreDisplay}
+                    </div>
                     <div class="elo-changes">
                         ${match.eloChanges.map(change => {
                             // Check if player was on winning team
@@ -602,4 +622,83 @@ function setupMatchListener() {
             }
         });
     });
+}
+
+function initializeBeadScorers() {
+    const team1Scorer = document.getElementById('team1-bead-scorer');
+    const team2Scorer = document.getElementById('team2-bead-scorer');
+    
+    if (team1Scorer && team2Scorer) {
+        setupBeadScorer(team1Scorer, 'team1');
+        setupBeadScorer(team2Scorer, 'team2');
+    }
+}
+
+function setupBeadScorer(scorerElement, teamId) {
+    const beads = Array.from(scorerElement.querySelectorAll('.bead'));
+    const scoreDisplay = scorerElement.querySelector('.score-display');
+    const resetButton = scorerElement.querySelector('.reset-score');
+    const scoreInput = document.getElementById(`${teamId}-score`);
+    
+    // Position beads at the top initially
+    positionBeadsAtTop(beads);
+    
+    // Add click handlers to beads
+    beads.forEach((bead, index) => {
+        bead.addEventListener('click', () => {
+            const currentScore = parseInt(scoreInput.value || '0');
+            // For reverse order, we need to find the lowest bead that hasn't been scored yet
+            const nextBeadIndex = findNextBeadToDrop(beads);
+            
+            if (index === nextBeadIndex && currentScore < 10) {
+                dropBead(bead);
+                updateScore(scoreInput, scoreDisplay, currentScore + 1);
+            }
+        });
+    });
+    
+    // Reset button functionality
+    resetButton.addEventListener('click', () => {
+        resetBeads(beads);
+        updateScore(scoreInput, scoreDisplay, 0);
+    });
+}
+
+function findNextBeadToDrop(beads) {
+    // Find the bottom-most bead that hasn't been scored yet
+    for (let i = beads.length - 1; i >= 0; i--) {
+        if (beads[i].dataset.scored !== 'true') {
+            return i;
+        }
+    }
+    return -1;
+}
+
+function positionBeadsAtTop(beads) {
+    beads.forEach((bead, i) => {
+        // Position beads at top with slight offset for visibility
+        bead.style.top = `${i * 15}px`;
+        bead.dataset.scored = 'false';
+    });
+}
+
+function dropBead(bead) {
+    bead.dataset.scored = 'true';
+    // The CSS will handle actual positioning via the [data-scored="true"] selector
+    // Calculate offset for smoother stacking at bottom (we're setting a CSS variable)
+    const position = parseInt(bead.dataset.position);
+    const offsetPx = (10 - position) * 15; // Spread beads at bottom
+    bead.style.setProperty('--offset-px', `${offsetPx}px`);
+}
+
+function resetBeads(beads) {
+    beads.forEach((bead, i) => {
+        bead.dataset.scored = 'false';
+        bead.style.top = `${i * 15}px`; // Reset to top position with offset
+    });
+}
+
+function updateScore(scoreInput, scoreDisplay, newScore) {
+    scoreInput.value = newScore;
+    scoreDisplay.textContent = newScore;
 }

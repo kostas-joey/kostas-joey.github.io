@@ -166,7 +166,14 @@ window.approveMatch = async function(matchId) {
         localStorage.setItem('lastApprovedMatch', JSON.stringify(matchDetails));
 
         // Extract data from pending match
-        const { team1Players, team2Players, team1Wins, currentRatings } = pendingMatch;
+        const { 
+            team1Players, 
+            team2Players, 
+            team1Wins, 
+            currentRatings,
+            team1Score, // Include score
+            team2Score  // Include score
+        } = pendingMatch;
 
         // Calculate team averages using the existing function
         const team1Avg = averageTeamElo(currentRatings[team1Players[0]], currentRatings[team1Players[1]]);
@@ -220,6 +227,8 @@ window.approveMatch = async function(matchId) {
             team1Players,
             team2Players,
             team1Wins,
+            team1Score, // Include score
+            team2Score, // Include score
             timestamp: pendingMatch.timestamp,
             eloChanges
         };
