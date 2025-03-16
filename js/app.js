@@ -34,6 +34,7 @@ const playerRatingInput = document.getElementById('player-rating');
 const logMatchButton = document.getElementById('log-match');
 
 let playerRatings = {};
+let sortBy = 'elo'; // Default sort by Elo
 
 // Load initial player data from Firestore
 async function init() {
@@ -69,6 +70,21 @@ function setupEventListeners() {
     
     // Log match button
     logMatchButton.addEventListener('click', handleLogMatch);
+    
+    // Sorting options
+    document.getElementById('sort-by-elo').addEventListener('click', function() {
+        sortBy = 'elo';
+        this.classList.add('active');
+        document.getElementById('sort-by-winrate').classList.remove('active');
+        updatePlayerList();
+    });
+    
+    document.getElementById('sort-by-winrate').addEventListener('click', function() {
+        sortBy = 'winrate';
+        this.classList.add('active');
+        document.getElementById('sort-by-elo').classList.remove('active');
+        updatePlayerList();
+    });
     
     // Update both lists when a new player is added
     window.addEventListener('playerAdded', async () => {
@@ -367,43 +383,47 @@ async function updatePlayerList() {
         // Get latest player data from Firestore
         const playersSnapshot = await getDocs(collection(db, "players"));
         
-               // Map and sort players by weighted Elo
-               const sortedPlayers = playersSnapshot.docs
-               .map(doc => {
-                   const data = doc.data();
-                   const totalMatches = (data.matches || 0);
-                   const wins = (data.wins || 0);
-                   
-                   // Calculate win rate and weighted Elo
-                   const winRate = totalMatches > 0 ? wins / totalMatches : 0;
-                   const weightedElo = data.rating * winRate; // Simple multiplication of Elo with win rate
-                   
-                   return {
-                       id: doc.id,
-                       name: data.name,
-                       rating: data.rating,
-                       matches: totalMatches,
-                       wins: wins,
-                       losses: (data.losses || 0),
-                       weightedElo: weightedElo
-                   };
-               })
-               .sort((a, b) => b.weightedElo - a.weightedElo);
+        // Map players with calculated stats
+        const players = playersSnapshot.docs.map(doc => {
+            const data = doc.data();
+            const totalMatches = (data.matches || 0);
+            const wins = (data.wins || 0);
+            const losses = (data.losses || 0);
             
+            // Calculate win rate
+            const winRate = totalMatches > 0 ? wins / totalMatches : 0;
+            
+            return {
+                id: doc.id,
+                name: data.name,
+                rating: data.rating,
+                matches: totalMatches,
+                wins: wins,
+                losses: losses,
+                winRate: winRate
+            };
+        });
+        
+        // Sort players based on selected criteria
+        const sortedPlayers = [...players].sort((a, b) => {
+            if (sortBy === 'elo') {
+                return b.rating - a.rating;
+            } else { // sortBy === 'winrate'
+                return b.winRate - a.winRate;
+            }
+        });
             
         // Create list items for each player
         sortedPlayers.forEach((data, index) => {
-            const winRate = data.matches > 0 
-                ? Math.round((data.wins / data.matches) * 100) 
-                : 0;
+            const winRatePercent = Math.round(data.winRate * 100);
             
             const li = document.createElement('li');
             li.innerHTML = `
                 <span class="rank">${index + 1}</span>
                 <span class="name">${data.name}</span>
                 <span class="elo">${Math.round(data.rating)}</span>
+                <span class="win-ratio">${winRatePercent}%</span>
                 <span class="stats">${data.wins}W - ${data.losses}L</span>
-                <span class="ratio">${winRate}%</span>
             `;
             li.style.cursor = 'pointer';
             li.onclick = () => window.location.href = `player-profile.html?id=${data.id}`;

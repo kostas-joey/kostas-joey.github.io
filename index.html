@@ -178,14 +178,18 @@
 
         <!-- Player List -->
         <div class="player-rankings">
-            <h2>Player Rankings by Joey-Index</h2>
+            <h2>Player Rankings</h2>
+            <div class="sort-options">
+                <button id="sort-by-elo" class="sort-button active">Sort by Elo</button>
+                <button id="sort-by-winrate" class="sort-button">Sort by Win Ratio</button>
+            </div>
             <div class="rankings-container">
                 <div class="rankings-header">
                     <span class="rank">#</span>
                     <span class="name">Player</span>
                     <span class="elo">ELO</span>
+                    <span class="win-ratio">Win Ratio</span>
                     <span class="stats">W/L</span>
-                    <span class="ratio">Win Rate</span>
                 </div>
                 <ul id="player-list"></ul>
             </div>
