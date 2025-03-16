@@ -12,6 +12,7 @@ import {
     doc, 
     getDoc,
     setDoc,
+    deleteDoc,
     query,
     orderBy,
     limit,
@@ -482,19 +483,61 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function displayRecentMatches() {
     try {
+        // Get both approved matches and pending matches
         const matchesRef = collection(db, "matches");
-        const q = query(matchesRef, orderBy("timestamp", "desc"), limit(10));
-        const querySnapshot = await getDocs(q);
+        const pendingMatchesRef = collection(db, "pendingMatches");
+        
+        const matchesQuery = query(matchesRef, orderBy("timestamp", "desc"), limit(10));
+        const pendingMatchesQuery = query(pendingMatchesRef, orderBy("timestamp", "desc"));
+        
+        const [matchesSnapshot, pendingMatchesSnapshot] = await Promise.all([
+            getDocs(matchesQuery),
+            getDocs(pendingMatchesQuery)
+        ]);
         
         const matchesList = document.getElementById('matches-list');
         matchesList.innerHTML = '';
         
-        querySnapshot.forEach((doc) => {
+        // Display pending matches first
+        pendingMatchesSnapshot.forEach((doc) => {
+            const match = doc.data();
+            const matchId = doc.id;
+            const date = match.timestamp.toDate();
+            const formattedDate = date.toLocaleDateString();
+            
+            // Create score display string if scores are available
+            const scoreDisplay = match.team1Score !== undefined && match.team2Score !== undefined ? 
+                `<div class="match-score">${match.team1Score} - ${match.team2Score}</div>` : '';
+            
+            const li = document.createElement('li');
+            li.className = 'match-entry pending-match';
+            li.innerHTML = `
+                <div class="match-content">
+                    <div class="match-header">
+                        <div class="match-date">${formattedDate}</div>
+                        ${scoreDisplay}
+                        <div class="pending-badge">PENDING</div>
+                    </div>
+                    <div class="teams-played">
+                        ${match.team1Players.join(' & ')} vs ${match.team2Players.join(' & ')}
+                    </div>
+                    <div class="match-actions">
+                        <button class="undo-match" data-match-id="${matchId}">
+                            Undo Match
+                        </button>
+                    </div>
+                </div>
+            `;
+            matchesList.appendChild(li);
+        });
+        
+        // Then display approved matches
+        matchesSnapshot.forEach((doc) => {
             const match = doc.data();
             const date = match.timestamp.toDate();
-            const formattedDate = date.toLocaleString();
+            const formattedDate = date.toLocaleDateString();
             
-            // Create score display string
+            // Create score display string if scores are available
             const scoreDisplay = match.team1Score !== undefined && match.team2Score !== undefined ? 
                 `<div class="match-score">${match.team1Score} - ${match.team2Score}</div>` : '';
             
@@ -530,6 +573,11 @@ async function displayRecentMatches() {
             matchesList.appendChild(li);
         });
 
+        // Add event listeners for undo buttons
+        document.querySelectorAll('.undo-match').forEach(button => {
+            button.addEventListener('click', handleUndoMatch);
+        });
+
         convertEmojis(matchesList);
 
     } catch (error) {
@@ -543,6 +591,33 @@ function convertEmojis(element) {
             folder: 'svg',
             ext: '.svg'
         });
+    }
+}
+
+async function handleUndoMatch(event) {
+    const matchId = event.target.getAttribute('data-match-id');
+    
+    if (!matchId) {
+        console.error('No match ID found');
+        return;
+    }
+    
+    if (!confirm('Are you sure you want to undo this pending match?')) {
+        return;
+    }
+    
+    try {
+        // Delete the pending match document
+        await deleteDoc(doc(db, "pendingMatches", matchId));
+        
+        // Refresh the matches display
+        await displayRecentMatches();
+        
+        // Show success message
+        alert('Match has been removed from pending queue');
+    } catch (error) {
+        console.error('Error removing match:', error);
+        alert('Failed to remove match. Please try again.');
     }
 }
 

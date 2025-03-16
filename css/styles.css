@@ -1705,3 +1705,53 @@ input:checked + .slider .moon {
 [data-theme='dark'] .match-score {
     background-color: rgba(255, 255, 255, 0.1);
 }
+
+/* Add these styles to the bottom of your CSS file */
+
+.pending-match {
+    opacity: 0.6;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-left: 3px solid #f39c12;
+}
+
+[data-theme='dark'] .pending-match {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.pending-badge {
+    display: inline-block;
+    background-color: #f39c12;
+    color: white;
+    font-size: 0.7em;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-left: 8px;
+    font-weight: bold;
+}
+
+.match-actions {
+    margin-top: 10px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.undo-match {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.8em;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+
+.undo-match:hover {
+    opacity: 1;
+}
+
+.teams-played {
+    font-weight: bold;
+    margin: 10px 0;
+}
