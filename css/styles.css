@@ -1807,3 +1807,31 @@ input:checked + .slider .moon {
         display: none;
     }
 }
+
+.rankings-view-options {
+    margin-bottom: 1rem;
+    display: inline-block;
+    margin-right: 1rem;
+}
+
+.rankings-view-options select {
+    padding: 6px 12px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    cursor: pointer;
+}
+
+/* Adjust the layout for sort options and view options to be on the same line */
+.player-rankings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+/* Update this if you want them side by side */
+.player-rankings-header .sort-options {
+    margin-bottom: 0;
+}

@@ -281,11 +281,27 @@ async function updatePlayerRecord(playerName, newRating, isWinner) {
     const playerDoc = await getDoc(playerRef);
     const playerData = playerDoc.data();
 
+    // Get current month key (YYYY-M format)
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${now.getMonth() + 1}`;
+
+    // Initialize or update monthly stats
+    const monthlyStats = playerData.monthlyStats || {};
+    if (!monthlyStats[currentMonth]) {
+        monthlyStats[currentMonth] = { matches: 0, wins: 0, losses: 0 };
+    }
+    
+    // Update monthly stats
+    monthlyStats[currentMonth].matches = (monthlyStats[currentMonth].matches || 0) + 1;
+    monthlyStats[currentMonth].wins = (monthlyStats[currentMonth].wins || 0) + (isWinner ? 1 : 0);
+    monthlyStats[currentMonth].losses = (monthlyStats[currentMonth].losses || 0) + (isWinner ? 0 : 1);
+
     await setDoc(playerRef, {
         ...playerData,
         rating: newRating,
         matches: (playerData.matches || 0) + 1,
         wins: (playerData.wins || 0) + (isWinner ? 1 : 0),
-        losses: (playerData.losses || 0) + (isWinner ? 0 : 1)
+        losses: (playerData.losses || 0) + (isWinner ? 0 : 1),
+        monthlyStats: monthlyStats
     });
 }

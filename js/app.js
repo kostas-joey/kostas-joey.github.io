@@ -35,6 +35,7 @@ const logMatchButton = document.getElementById('log-match');
 
 let playerRatings = {};
 let sortBy = 'elo'; // Default sort by Elo
+let rankingType = 'general'; // Default to general rankings
 
 // Load initial player data from Firestore
 async function init() {
@@ -107,6 +108,7 @@ function setupEventListeners() {
                 celebrateVictory(event.detail.winners);
             }
         });
+    setupRankingTypeDropdown();
 }
 
 async function getPlayerFromFirestore(playerName) {
@@ -277,6 +279,37 @@ async function handleLogMatch() {
         console.error("Error submitting match:", error);
         alert('Failed to submit match. Please try again.');
     }
+
+    // When updating player records in admin.js, add this to track monthly stats:
+    async function updatePlayerRecord(playerName, newRating, isWinner) {
+        const playerRef = doc(db, "players", playerName);
+        const playerDoc = await getDoc(playerRef);
+        const playerData = playerDoc.data();
+
+        // Get current month key (YYYY-M format)
+        const now = new Date();
+        const currentMonth = `${now.getFullYear()}-${now.getMonth() + 1}`;
+
+        // Initialize or update monthly stats
+        const monthlyStats = playerData.monthlyStats || {};
+        if (!monthlyStats[currentMonth]) {
+            monthlyStats[currentMonth] = { matches: 0, wins: 0, losses: 0 };
+        }
+        
+        // Update monthly stats
+        monthlyStats[currentMonth].matches = (monthlyStats[currentMonth].matches || 0) + 1;
+        monthlyStats[currentMonth].wins = (monthlyStats[currentMonth].wins || 0) + (isWinner ? 1 : 0);
+        monthlyStats[currentMonth].losses = (monthlyStats[currentMonth].losses || 0) + (isWinner ? 0 : 1);
+
+        await setDoc(playerRef, {
+            ...playerData,
+            rating: newRating,
+            matches: (playerData.matches || 0) + 1,
+            wins: (playerData.wins || 0) + (isWinner ? 1 : 0),
+            losses: (playerData.losses || 0) + (isWinner ? 0 : 1),
+            monthlyStats: monthlyStats
+        });
+    }
 }
 
 async function updateTeamMatch(player1, player2, player3, player4, team1Wins) {
@@ -375,7 +408,7 @@ async function getPlayerRating(playerName) {
 } */
 
 async function updatePlayerList() {
-    console.log("Updating player list...");
+    console.log(`Updating player list with ranking type: ${rankingType}...`);
     
     playerList.innerHTML = '';
     
@@ -390,32 +423,63 @@ async function updatePlayerList() {
             const wins = (data.wins || 0);
             const losses = (data.losses || 0);
             
-            // Calculate win rate
+            // Get monthly stats if they exist
+            const currentDate = new Date();
+            const currentMonth = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}`;
+            const monthlyStats = data.monthlyStats && data.monthlyStats[currentMonth] ? data.monthlyStats[currentMonth] : {
+                matches: 0,
+                wins: 0,
+                losses: 0
+            };
+            
+            // Calculate win rates
             const winRate = totalMatches > 0 ? wins / totalMatches : 0;
+            const monthlyWinRate = monthlyStats.matches > 0 ? monthlyStats.wins / monthlyStats.matches : 0;
             
             return {
                 id: doc.id,
                 name: data.name,
                 rating: data.rating,
+                // General stats
                 matches: totalMatches,
                 wins: wins,
                 losses: losses,
-                winRate: winRate
+                winRate: winRate,
+                // Monthly stats
+                monthlyMatches: monthlyStats.matches || 0,
+                monthlyWins: monthlyStats.wins || 0,
+                monthlyLosses: monthlyStats.losses || 0,
+                monthlyWinRate: monthlyWinRate
             };
         });
         
-        // Sort players based on selected criteria
+        // Sort players based on selected criteria and ranking type
         const sortedPlayers = [...players].sort((a, b) => {
             if (sortBy === 'elo') {
                 return b.rating - a.rating;
             } else { // sortBy === 'winrate'
-                return b.winRate - a.winRate;
+                if (rankingType === 'monthly') {
+                    return b.monthlyWinRate - a.monthlyWinRate;
+                } else {
+                    return b.winRate - a.winRate;
+                }
             }
         });
             
         // Create list items for each player
         sortedPlayers.forEach((data, index) => {
-            const winRatePercent = Math.round(data.winRate * 100);
+            // Determine which stats to display based on ranking type
+            let winRatePercent, winsDisplay, lossesDisplay;
+            
+            if (rankingType === 'monthly') {
+                winRatePercent = Math.round(data.monthlyWinRate * 100);
+                winsDisplay = data.monthlyWins;
+                lossesDisplay = data.monthlyLosses;
+            } else {
+                winRatePercent = Math.round(data.winRate * 100);
+                winsDisplay = data.wins;
+                lossesDisplay = data.losses;
+            }
             
             const li = document.createElement('li');
             li.innerHTML = `
@@ -423,7 +487,7 @@ async function updatePlayerList() {
                 <span class="name">${data.name}</span>
                 <span class="elo">${Math.round(data.rating)}</span>
                 <span class="win-ratio">${winRatePercent}%</span>
-                <span class="stats">${data.wins}W - ${data.losses}L</span>
+                <span class="stats">${winsDisplay}W - ${lossesDisplay}L</span>
             `;
             li.style.cursor = 'pointer';
             li.onclick = () => window.location.href = `player-profile.html?id=${data.id}`;
@@ -796,4 +860,15 @@ function resetBeads(beads) {
 function updateScore(scoreInput, scoreDisplay, newScore) {
     scoreInput.value = newScore;
     scoreDisplay.textContent = newScore;
+}
+
+// Add this function to set up the ranking type dropdown
+function setupRankingTypeDropdown() {
+    const rankingTypeSelect = document.getElementById('ranking-type');
+    if (rankingTypeSelect) {
+        rankingTypeSelect.addEventListener('change', function() {
+            rankingType = this.value;
+            updatePlayerList(); // Refresh the player list with new ranking type
+        });
+    }
 }
