@@ -423,14 +423,20 @@ async function updatePlayerList() {
             const wins = (data.wins || 0);
             const losses = (data.losses || 0);
             
-            // Get monthly stats if they exist
-            const currentDate = new Date();
-            const currentMonth = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}`;
-            const monthlyStats = data.monthlyStats && data.monthlyStats[currentMonth] ? data.monthlyStats[currentMonth] : {
-                matches: 0,
-                wins: 0,
-                losses: 0
-            };
+            // Check if we're using general stats or monthly stats
+            let monthlyStats = { matches: 0, wins: 0, losses: 0 };
+            
+            if (rankingType !== 'general' && data.monthlyStats && data.monthlyStats[rankingType]) {
+                // Use the specific month's stats
+                monthlyStats = data.monthlyStats[rankingType];
+            } else if (rankingType === 'general') {
+                // Use overall stats
+                monthlyStats = {
+                    matches: totalMatches,
+                    wins: wins,
+                    losses: losses
+                };
+            }
             
             // Calculate win rates
             const winRate = totalMatches > 0 ? wins / totalMatches : 0;
@@ -440,12 +446,10 @@ async function updatePlayerList() {
                 id: doc.id,
                 name: data.name,
                 rating: data.rating,
-                // General stats
                 matches: totalMatches,
                 wins: wins,
                 losses: losses,
                 winRate: winRate,
-                // Monthly stats
                 monthlyMatches: monthlyStats.matches || 0,
                 monthlyWins: monthlyStats.wins || 0,
                 monthlyLosses: monthlyStats.losses || 0,
@@ -862,13 +866,71 @@ function updateScore(scoreInput, scoreDisplay, newScore) {
     scoreDisplay.textContent = newScore;
 }
 
-// Add this function to set up the ranking type dropdown
+// Setup the ranking type dropdown with dynamic month options
 function setupRankingTypeDropdown() {
     const rankingTypeSelect = document.getElementById('ranking-type');
-    if (rankingTypeSelect) {
-        rankingTypeSelect.addEventListener('change', function() {
-            rankingType = this.value;
-            updatePlayerList(); // Refresh the player list with new ranking type
+    if (!rankingTypeSelect) return;
+    
+    // Clear existing options except the first one (All Time)
+    while (rankingTypeSelect.options.length > 1) {
+        rankingTypeSelect.remove(1);
+    }
+    
+    // Get all unique months from player data
+    getUniqueMonths().then(months => {
+        // Sort months in descending order (newest first)
+        months.sort().reverse();
+        
+        // Add option for each month
+        months.forEach(monthKey => {
+            const [year, month] = monthKey.split('-');
+            const date = new Date(year, month - 1, 1);
+            const monthName = date.toLocaleString('en-US', { month: 'long' });
+            
+            const option = document.createElement('option');
+            option.value = monthKey;  // Use YYYY-M format as value
+            option.textContent = `${monthName} ${year}`;
+            rankingTypeSelect.appendChild(option);
         });
+        
+        // Set current month as selected if available
+        const now = new Date();
+        const currentMonthKey = `${now.getFullYear()}-${now.getMonth() + 1}`;
+        
+        // Find and select the current month if it exists
+        for (let i = 0; i < rankingTypeSelect.options.length; i++) {
+            if (rankingTypeSelect.options[i].value === currentMonthKey) {
+                rankingTypeSelect.selectedIndex = i;
+                break;
+            }
+        }
+    });
+    
+    // Add event listener to handle ranking type changes
+    rankingTypeSelect.addEventListener('change', function() {
+        rankingType = this.value;
+        updatePlayerList(); // Refresh the player list with new ranking type
+    });
+}
+
+// Function to get all unique months that have data
+async function getUniqueMonths() {
+    try {
+        const playersSnapshot = await getDocs(collection(db, "players"));
+        const months = new Set();
+        
+        playersSnapshot.forEach(doc => {
+            const data = doc.data();
+            if (data.monthlyStats) {
+                Object.keys(data.monthlyStats).forEach(month => {
+                    months.add(month);
+                });
+            }
+        });
+        
+        return Array.from(months);
+    } catch (error) {
+        console.error("Error getting unique months:", error);
+        return [];
     }
 }
