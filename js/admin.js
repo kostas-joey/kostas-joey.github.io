@@ -79,7 +79,8 @@ async function loadPendingPlayers() {
 
 async function loadPendingMatches() {
     const pendingMatchesRef = collection(db, "pendingMatches");
-    const snapshot = await getDocs(query(pendingMatchesRef, orderBy("timestamp", "desc")));
+    // Change sorting to ascending so oldest matches appear first
+    const snapshot = await getDocs(query(pendingMatchesRef, orderBy("timestamp", "asc")));
     
     pendingMatchesList.innerHTML = '';
     
@@ -109,10 +110,24 @@ function createPendingPlayerElement(id, player) {
 function createPendingMatchElement(id, match) {
     const div = document.createElement('div');
     div.className = 'pending-item';
+    
+    // Format timestamp with proper error handling
+    let formattedDate = "Unknown date";
+    try {
+        if (match.timestamp) {
+            // Handle both timestamp formats (milliseconds or Firestore timestamp object)
+            const timestamp = match.timestamp.toDate ? match.timestamp.toDate() : new Date(match.timestamp);
+            formattedDate = timestamp.toLocaleString();
+        }
+    } catch (error) {
+        console.warn("Error formatting date:", error);
+    }
+    
     div.innerHTML = `
         <div class="pending-info">
             <h3>${match.team1Players.join(' & ')} vs ${match.team2Players.join(' & ')}</h3>
             <p>Winner: ${match.team1Wins ? 'Team 1' : 'Team 2'}</p>
+            <p>Added: ${formattedDate}</p>
         </div>
         <div class="pending-actions">
             <button class="approve-btn" onclick="approveMatch('${id}')">Approve</button>
@@ -151,6 +166,23 @@ window.denyPlayer = async function(playerId) {
     }
 }
 
+async function getPlayerRating(playerName) {
+    try {
+        const playerRef = doc(db, "players", playerName);
+        const playerDoc = await getDoc(playerRef);
+        
+        if (playerDoc.exists()) {
+            return playerDoc.data().rating || 1200;
+        } else {
+            console.warn(`Player ${playerName} not found, using default rating 1200`);
+            return 1200;
+        }
+    } catch (error) {
+        console.error("Error getting player rating:", error);
+        return 1200;
+    }
+}
+
 window.approveMatch = async function(matchId) {
     try {
         const matchRef = doc(db, "pendingMatches", matchId);
@@ -169,11 +201,18 @@ window.approveMatch = async function(matchId) {
         const { 
             team1Players, 
             team2Players, 
-            team1Wins, 
-            currentRatings,
-            team1Score, // Include score
-            team2Score  // Include score
+            team1Wins,
+            team1Score,
+            team2Score
         } = pendingMatch;
+
+        // Get current ratings instead of using stored ones
+        const currentRatings = {
+            [team1Players[0]]: await getPlayerRating(team1Players[0]),
+            [team1Players[1]]: await getPlayerRating(team1Players[1]),
+            [team2Players[0]]: await getPlayerRating(team2Players[0]),
+            [team2Players[1]]: await getPlayerRating(team2Players[1])
+        };
 
         // Calculate team averages using the existing function
         const team1Avg = averageTeamElo(currentRatings[team1Players[0]], currentRatings[team1Players[1]]);
