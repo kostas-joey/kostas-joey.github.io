@@ -16,16 +16,33 @@ const db = getFirestore(app);
 
 // Elo rating calculation function
 function calculateElo(playerRating, opponentRating, result) {
-    const K = 32;
+    const K = 25;
     const expectedScore = 1 / (1 + Math.pow(10, (opponentRating - playerRating) / 400));
     return playerRating + K * (result - expectedScore);
 }
 
 // Calculate Elo change for a player based on team average
-function calculateTeamElo(playerRating, teamAvgRating, opponentTeamAvgRating, result) {
-    const K = 32;
+function calculateTeamElo(playerRating, teamAvgRating, opponentTeamAvgRating, result, scoreFactor = 1.0) {
+    const K = 25;
     const expectedScore = 1 / (1 + Math.pow(10, (opponentTeamAvgRating - teamAvgRating) / 400));
-    return playerRating + K * (result - expectedScore);
+    // Apply score factor to K value
+    return playerRating + (K * scoreFactor) * (result - expectedScore);
+}
+
+// Calculate a scale factor based on score difference
+// Score diff 0 = multiplier of 1.0
+// Score diff 10 = multiplier of 1.5
+// Linear scaling for values in between
+function calculateScoreFactor(team1Score, team2Score) {
+    // Use 0 if scores are undefined/null
+    const score1 = team1Score || 0;
+    const score2 = team2Score || 0;
+    
+    // Calculate absolute score difference (0-10)
+    const scoreDiff = Math.abs(score1 - score2);
+    
+    // Linear scaling between 1.0 and 1.5
+    return 1.0 + (scoreDiff * 0.05);
 }
 
 async function updatePlayerData(playerName, newRating, isWinner) {
@@ -211,5 +228,6 @@ export {
     calculateWeightedElo,  // Add the new function to exports
     processTeamMatch,
     calculateTeamElo,
-    saveMatchHistory
+    saveMatchHistory,
+    calculateScoreFactor
 };

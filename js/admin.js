@@ -10,7 +10,7 @@ import {
     query,
     orderBy 
 } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
-import { calculateTeamElo, averageTeamElo } from './elo.js';
+import { calculateTeamElo, averageTeamElo, calculateScoreFactor } from './elo.js';
 
 const firebaseConfig = {
     apiKey: "AIzaSyCC6oO1N3jkcLbyX0q9NYqWbR-VoRtZ-fQ",
@@ -218,15 +218,19 @@ window.approveMatch = async function(matchId) {
         const team1Avg = averageTeamElo(currentRatings[team1Players[0]], currentRatings[team1Players[1]]);
         const team2Avg = averageTeamElo(currentRatings[team2Players[0]], currentRatings[team2Players[1]]);
 
-        // Calculate new ratings using the existing function
+        // Calculate score factor based on score difference
+        const scoreFactor = calculateScoreFactor(team1Score, team2Score);
+        console.log(`Score difference factor: ${scoreFactor} (scores: ${team1Score}-${team2Score})`);
+
+        // Calculate new ratings using the modified function with score factor
         const result = team1Wins ? 1 : 0;
         const newTeam1Ratings = [
-            Math.round(calculateTeamElo(currentRatings[team1Players[0]], team1Avg, team2Avg, result)),
-            Math.round(calculateTeamElo(currentRatings[team1Players[1]], team1Avg, team2Avg, result))
+            Math.round(calculateTeamElo(currentRatings[team1Players[0]], team1Avg, team2Avg, result, scoreFactor)),
+            Math.round(calculateTeamElo(currentRatings[team1Players[1]], team1Avg, team2Avg, result, scoreFactor))
         ];
         const newTeam2Ratings = [
-            Math.round(calculateTeamElo(currentRatings[team2Players[0]], team2Avg, team1Avg, 1 - result)),
-            Math.round(calculateTeamElo(currentRatings[team2Players[1]], team2Avg, team1Avg, 1 - result))
+            Math.round(calculateTeamElo(currentRatings[team2Players[0]], team2Avg, team1Avg, 1 - result, scoreFactor)),
+            Math.round(calculateTeamElo(currentRatings[team2Players[1]], team2Avg, team1Avg, 1 - result, scoreFactor))
         ];
 
         // Create enhanced eloChanges array with before and after ratings
