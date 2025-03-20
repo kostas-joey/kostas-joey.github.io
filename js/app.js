@@ -55,6 +55,7 @@ async function init() {
         // Check for recently approved matches
         checkRecentlyApprovedMatch();
         setupMatchListener();
+        setupPendingMatchListener();
 
     } catch (error) {
         console.error("Error during initialization:", error);
@@ -639,6 +640,19 @@ async function handleUndoMatch(event) {
         console.error('Error removing match:', error);
         alert('Failed to remove match. Please try again.');
     }
+}
+
+function setupPendingMatchListener() {
+    console.log("Setting up pending match listener...");
+    const pendingMatchesRef = collection(db, "pendingMatches");
+    const q = query(pendingMatchesRef, orderBy("timestamp", "desc"));
+    
+    onSnapshot(q, (snapshot) => {
+        if (!snapshot.empty) {
+            console.log("Pending matches updated, refreshing display...");
+            displayRecentMatches();
+        }
+    });
 }
 
 // Theme switcher
