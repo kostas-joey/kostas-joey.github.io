@@ -26,6 +26,7 @@ const chartContainer = document.getElementById('elo-chart');
 const teamStatsChart = document.getElementById('team-stats-chart');
 const playerStatsChart = document.getElementById('player-stats-chart');
 const positionChart = document.getElementById('position-chart');
+const scoreDiffChart = document.getElementById('score-diff-chart');
 let selectedPlayers = new Set();
 
 // Colors for different players
@@ -203,6 +204,7 @@ async function updateChart() {
         };
         Plotly.newPlot(chartContainer, [], emptyLayout);
         Plotly.newPlot(positionChart, [], emptyLayout);
+        Plotly.newPlot(scoreDiffChart, [], emptyLayout);
         return;
     }
 
@@ -262,8 +264,62 @@ async function updateChart() {
         }
     };
 
-    Plotly.newPlot(chartContainer, eloData, eloLayout);
-    Plotly.newPlot(positionChart, positionTraces, positionLayout);
+    // Add Score Difference chart
+    console.log('Updating score difference chart for players:', selectedPlayers);
+    const scoreDiffData = await loadScoreDifferences(Array.from(selectedPlayers));
+    console.log('Score diff data received:', scoreDiffData);
+
+    if (!scoreDiffChart) {
+        console.error('Score diff chart container not found!');
+        return;
+    }
+    
+    // Check if data is valid
+    if (!scoreDiffData || scoreDiffData.length === 0) {
+        console.warn('No score difference data available');
+        Plotly.newPlot(scoreDiffChart, [], emptyLayout);
+        return;
+    }
+
+    const scoreDiffTraces = scoreDiffData.map((player, i) => {
+        console.log(`Creating trace for player ${player.name}:`, player);
+        return {
+            x: ['Wins', 'Losses'],
+            y: [player.avgWinDiff, player.avgLossDiff],
+            name: player.name,
+            type: 'bar',
+            text: [
+                `${player.avgWinDiff} (${player.winCount} games)`, 
+                `${player.avgLossDiff} (${player.lossCount} games)`
+            ],
+            hovertemplate: '%{x}: %{text}<extra></extra>',
+            marker: { color: colors[i % colors.length] }
+        };
+    });
+
+    console.log('Score diff traces:', scoreDiffTraces);
+    
+        const scoreDiffLayout = {
+            barmode: 'group',
+            xaxis: { 
+                title: 'Result',
+                showgrid: false
+            },
+            yaxis: { 
+                title: 'Average Score Difference',
+                showgrid: false
+            },
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            font: {
+                color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : '#000'
+            }
+        };
+
+        Plotly.newPlot(chartContainer, eloData, eloLayout);
+        Plotly.newPlot(positionChart, positionTraces, positionLayout);
+        console.log('Plotting score diff chart with:', scoreDiffTraces, scoreDiffLayout);
+        Plotly.newPlot(scoreDiffChart, scoreDiffTraces, scoreDiffLayout);
 }
 
 // Theme switcher
@@ -297,6 +353,9 @@ function switchTheme(e) {
     
     if (playerStatsChart && playerStatsChart.data) {
         Plotly.relayout(playerStatsChart, layout);
+    }
+    if (scoreDiffChart && scoreDiffChart.data) {
+        Plotly.relayout(scoreDiffChart, layout);
     }
 }
 
@@ -412,3 +471,83 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadPlayers();
     await loadMatchStatistics();  // Make sure this runs
 });
+
+// Add this new function to calculate score differences
+async function loadScoreDifferences(selectedPlayers) {
+    console.log('loadScoreDifferences called with players:', selectedPlayers);
+    const matchesRef = collection(db, "matches");
+    const snapshot = await getDocs(matchesRef);
+    console.log('Matches retrieved:', snapshot.docs.length);
+
+    // Initialize data structure for each player's score differences
+    const playerScoreDiffs = {};
+    selectedPlayers.forEach(playerId => {
+        playerScoreDiffs[playerId] = {
+            name: playerId,
+            wins: {
+                totalDiff: 0,
+                count: 0
+            },
+            losses: {
+                totalDiff: 0,
+                count: 0
+            }
+        };
+    });
+
+    // Process matches
+    snapshot.docs.forEach(doc => {
+        const match = doc.data();
+        console.log('Processing match for score diff:', match);
+        
+        // Check if required fields exist
+        if (!match.team1Players || !match.team2Players || 
+            match.team1Score === undefined || match.team2Score === undefined) {
+            console.warn('Match missing required fields:', match);
+            return; // Skip this match
+        }
+        
+        const winningTeam = match.team1Wins ? match.team1Players : match.team2Players;
+        const losingTeam = match.team1Wins ? match.team2Players : match.team1Players;
+        const winningScore = match.team1Wins ? match.team1Score : match.team2Score;
+        const losingScore = match.team1Wins ? match.team2Score : match.team1Score;
+        const scoreDiff = winningScore - losingScore;
+        
+        console.log(`Match score: ${winningScore}-${losingScore}, diff: ${scoreDiff}`);
+
+        // Process for each selected player
+        selectedPlayers.forEach(playerId => {
+            // If player was in winning team
+            if (winningTeam.includes(playerId)) {
+                playerScoreDiffs[playerId].wins.totalDiff += scoreDiff;
+                playerScoreDiffs[playerId].wins.count++;
+                console.log(`Player ${playerId} won with diff ${scoreDiff}`);
+            }
+            // If player was in losing team
+            else if (losingTeam.includes(playerId)) {
+                playerScoreDiffs[playerId].losses.totalDiff += scoreDiff;
+                playerScoreDiffs[playerId].losses.count++;
+                console.log(`Player ${playerId} lost with diff ${scoreDiff}`);
+            }
+        });
+    });
+
+    // Calculate averages and prepare return data
+    const result = Object.values(playerScoreDiffs).map(player => {
+        const avgWinDiff = player.wins.count > 0 ? 
+            (player.wins.totalDiff / player.wins.count).toFixed(1) : 0;
+        const avgLossDiff = player.losses.count > 0 ? 
+            (player.losses.totalDiff / player.losses.count).toFixed(1) : 0;
+        
+        return {
+            name: player.name,
+            avgWinDiff: parseFloat(avgWinDiff),
+            avgLossDiff: parseFloat(avgLossDiff),
+            winCount: player.wins.count,
+            lossCount: player.losses.count
+        };
+    });
+    
+    console.log('Score difference results:', result);
+    return result;
+}

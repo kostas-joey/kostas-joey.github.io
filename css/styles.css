@@ -1807,3 +1807,11 @@ input:checked + .slider .moon {
         display: none;
     }
 }
+
+.match-score {
+    font-weight: bold;
+    margin: 0 10px;
+    padding: 2px 6px;
+    background-color: var(--card-bg);
+    border-radius: 4px;
+}
