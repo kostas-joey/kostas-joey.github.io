@@ -27,6 +27,7 @@ const teamStatsChart = document.getElementById('team-stats-chart');
 const playerStatsChart = document.getElementById('player-stats-chart');
 const positionChart = document.getElementById('position-chart');
 const scoreDiffChart = document.getElementById('score-diff-chart');
+const impactChart = document.getElementById('impact-chart');
 let selectedPlayers = new Set();
 
 // Colors for different players
@@ -34,6 +35,17 @@ const colors = [
     '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
     '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'
 ];
+
+let teamStats = { team1Wins: 0, team2Wins: 0 };
+let lastEloData = [];
+let lastPositionData = [];
+let lastScoreDiffData = [];
+let lastImpactData = [];
+
+const responsiveConfig = {
+    responsive: true,
+    displayModeBar: false
+};
 
 async function loadPlayers() {
     const playersRef = collection(db, "players");
@@ -205,6 +217,7 @@ async function updateChart() {
         Plotly.newPlot(chartContainer, [], emptyLayout);
         Plotly.newPlot(positionChart, [], emptyLayout);
         Plotly.newPlot(scoreDiffChart, [], emptyLayout);
+        Plotly.newPlot(impactChart, [], emptyLayout);
         return;
     }
 
@@ -316,10 +329,49 @@ async function updateChart() {
             }
         };
 
-        Plotly.newPlot(chartContainer, eloData, eloLayout);
-        Plotly.newPlot(positionChart, positionTraces, positionLayout);
-        console.log('Plotting score diff chart with:', scoreDiffTraces, scoreDiffLayout);
-        Plotly.newPlot(scoreDiffChart, scoreDiffTraces, scoreDiffLayout);
+    // Add Player Impact chart
+    const impactData = await loadPlayerImpact(Array.from(selectedPlayers));
+    
+    const impactTraces = impactData.map((player, i) => ({
+        x: ['Scored (Front)', 'Conceded (Back)'],
+        y: [player.avgGoalsFront, player.avgGoalsConcededBack],
+        name: player.name,
+        type: 'bar',
+        text: [
+            `${player.avgGoalsFront} (${player.frontMatches} games)`, 
+            `${player.avgGoalsConcededBack} (${player.backMatches} games)`
+        ],
+        hovertemplate: '%{x}: %{text}<extra></extra>',
+        marker: { color: colors[i % colors.length] }
+    }));
+
+    const impactLayout = {
+        barmode: 'group',
+        xaxis: { 
+            title: 'Position Metric',
+            showgrid: false
+        },
+        yaxis: { 
+            title: 'Average Goals',
+            showgrid: false
+        },
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: {
+            color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : '#000'
+        }
+    };
+
+    lastEloData = eloData;
+    lastPositionData = positionTraces;
+    lastScoreDiffData = scoreDiffTraces;
+    lastImpactData = impactTraces;
+
+    Plotly.newPlot(chartContainer, eloData, eloLayout, responsiveConfig);
+    Plotly.newPlot(positionChart, positionTraces, positionLayout, responsiveConfig);
+    Plotly.newPlot(impactChart, impactTraces, impactLayout, responsiveConfig);
+    Plotly.newPlot(scoreDiffChart, scoreDiffTraces, scoreDiffLayout, responsiveConfig);
+
 }
 
 // Theme switcher
@@ -330,32 +382,62 @@ function switchTheme(e) {
     document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
     
-    // Update all charts with new theme colors
-    const layout = {
-        paper_bgcolor: 'rgba(0,0,0,0)',
-        plot_bgcolor: 'rgba(0,0,0,0)',
-        xaxis: { showgrid: false },
-        yaxis: { showgrid: false },
-        font: { color: isDark ? '#fff' : '#000' }
-    };
+    // Prepare theme settings
+    const fontColor = isDark ? '#fff' : '#000';
     
-    if (chartContainer.data) {
-        Plotly.relayout(chartContainer, layout);
-    }
-    
-    if (positionChart.data) {
-        Plotly.relayout(positionChart, layout);
-    }
-    
-    if (teamStatsChart && teamStatsChart.data) {
-        Plotly.relayout(teamStatsChart, layout);
-    }
-    
-    if (playerStatsChart && playerStatsChart.data) {
-        Plotly.relayout(playerStatsChart, layout);
-    }
-    if (scoreDiffChart && scoreDiffChart.data) {
-        Plotly.relayout(scoreDiffChart, layout);
+    try {
+        // Redraw each chart with its stored data and updated theme
+        if (chartContainer && lastEloData.length > 0) {
+            const layout = {
+                xaxis: { title: 'Match Number', tickmode: 'linear', showgrid: false },
+                yaxis: { title: 'Elo Rating', showgrid: false },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                font: { color: fontColor }
+            };
+            Plotly.newPlot(chartContainer, lastEloData, layout, responsiveConfig);
+        }
+        
+        if (positionChart && lastPositionData.length > 0) {
+            const layout = {
+                barmode: 'group',
+                xaxis: { title: 'Position', showgrid: false },
+                yaxis: { title: 'Win Rate (%)', range: [0, 100], showgrid: false },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                font: { color: fontColor }
+            };
+            Plotly.newPlot(positionChart, lastPositionData, layout, responsiveConfig);
+        }
+        
+        if (scoreDiffChart && lastScoreDiffData.length > 0) {
+            const layout = {
+                barmode: 'group',
+                xaxis: { title: 'Result', showgrid: false },
+                yaxis: { title: 'Average Score Difference', showgrid: false },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                font: { color: fontColor }
+            };
+            Plotly.newPlot(scoreDiffChart, lastScoreDiffData, layout, responsiveConfig);
+        }
+        
+        if (impactChart && lastImpactData.length > 0) {
+            const layout = {
+                barmode: 'group',
+                xaxis: { title: 'Position Metric', showgrid: false },
+                yaxis: { title: 'Average Goals', showgrid: false },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                font: { color: fontColor }
+            };
+            Plotly.newPlot(impactChart, lastImpactData, layout, responsiveConfig);
+        }
+        
+        // Redraw team stats chart with stored data
+        displayTeamStats(teamStats);
+    } catch (error) {
+        console.error('Error updating chart themes:', error);
     }
 }
 
@@ -401,9 +483,13 @@ function displayTeamStats(stats) {
         console.error('Team stats chart container not found!');
         return;
     }
+    
+    // Store the stats for theme switching
+    teamStats = { ...stats };
+    
     console.log('Displaying team stats:', stats);
     const data = [{
-        x: ['Team Black', 'Team Gray'],
+        x: ['Black', 'Gray'],
         y: [stats.team1Wins, stats.team2Wins],
         type: 'bar',
         marker: {
@@ -428,7 +514,7 @@ function displayTeamStats(stats) {
         }
     };
 
-    Plotly.newPlot(teamStatsChart, data, layout);
+    Plotly.newPlot(teamStatsChart, data, layout, responsiveConfig);
 }
 
 function displayPlayerStats(stats) {
@@ -551,3 +637,100 @@ async function loadScoreDifferences(selectedPlayers) {
     console.log('Score difference results:', result);
     return result;
 }
+
+// Add this new function to calculate player impact metrics
+async function loadPlayerImpact(selectedPlayers) {
+    console.log('loadPlayerImpact called with players:', selectedPlayers);
+    const matchesRef = collection(db, "matches");
+    const snapshot = await getDocs(matchesRef);
+    
+    // Initialize data structure for each player's impact stats
+    const playerImpact = {};
+    selectedPlayers.forEach(playerId => {
+        playerImpact[playerId] = {
+            name: playerId,
+            front: {
+                totalGoals: 0,
+                matches: 0
+            },
+            back: {
+                totalGoalsConceded: 0,
+                matches: 0
+            }
+        };
+    });
+
+    // Process matches
+    snapshot.docs.forEach(doc => {
+        const match = doc.data();
+        
+        // Check if required fields exist
+        if (!match.team1Players || !match.team2Players || 
+            match.team1Score === undefined || match.team2Score === undefined) {
+            return; // Skip this match
+        }
+        
+        // Process team 1 players
+        selectedPlayers.forEach(playerId => {
+            const team1Position = match.team1Players.indexOf(playerId);
+            const team2Position = match.team2Players.indexOf(playerId);
+            
+            // If player was in team 1 front position
+            if (team1Position === 0) {
+                playerImpact[playerId].front.totalGoals += match.team1Score;
+                playerImpact[playerId].front.matches++;
+            }
+            
+            // If player was in team 1 back position
+            else if (team1Position === 1) {
+                playerImpact[playerId].back.totalGoalsConceded += match.team2Score;
+                playerImpact[playerId].back.matches++;
+            }
+            
+            // If player was in team 2 front position  
+            else if (team2Position === 0) {
+                playerImpact[playerId].front.totalGoals += match.team2Score;
+                playerImpact[playerId].front.matches++;
+            }
+            
+            // If player was in team 2 back position
+            else if (team2Position === 1) {
+                playerImpact[playerId].back.totalGoalsConceded += match.team1Score;
+                playerImpact[playerId].back.matches++;
+            }
+        });
+    });
+
+    // Calculate averages and prepare return data
+    return Object.values(playerImpact).map(player => {
+        const avgGoalsFront = player.front.matches > 0 ? 
+            (player.front.totalGoals / player.front.matches).toFixed(1) : 0;
+        const avgGoalsConcededBack = player.back.matches > 0 ? 
+            (player.back.totalGoalsConceded / player.back.matches).toFixed(1) : 0;
+        
+        return {
+            name: player.name,
+            avgGoalsFront: parseFloat(avgGoalsFront),
+            avgGoalsConcededBack: parseFloat(avgGoalsConcededBack),
+            frontMatches: player.front.matches,
+            backMatches: player.back.matches
+        };
+    });
+}
+
+// Add window resize event to handle chart resizing
+window.addEventListener('resize', () => {
+    const charts = [
+        chartContainer, 
+        positionChart, 
+        impactChart, 
+        scoreDiffChart, 
+        teamStatsChart
+    ].filter(chart => chart && chart.data);
+    
+    charts.forEach(chart => {
+        Plotly.relayout(chart, {
+            autosize: true
+        });
+    });
+});
