@@ -135,6 +135,13 @@ async function loadPlayerMatches() {
             const opposingTeam = wasTeam1 ? match.team2Players : match.team1Players;
             const didWin = wasTeam1 === match.team1Wins;
 
+            // Get the scores
+            const playerTeamScore = wasTeam1 ? match.team1Score : match.team2Score;
+            const opposingTeamScore = wasTeam1 ? match.team2Score : match.team1Score;
+            
+            // Format the score string with player's team score first
+            const scoreDisplay = `${playerTeamScore}-${opposingTeamScore}`;
+            
             const li = document.createElement('li');
             li.innerHTML = `
                 <div class="match-result ${didWin ? 'win' : 'loss'}">
@@ -143,6 +150,7 @@ async function loadPlayerMatches() {
                     </div>
                     <div class="match-details">
                         <span class="match-date">${timestamp.toLocaleDateString()}</span>
+                        <span class="match-score">${scoreDisplay}</span>
                         <span class="match-outcome">
                             ${didWin ? 'Won' : 'Lost'} 
                             (${playerChange.change > 0 ? '+' : ''}${Math.round(playerChange.change)})
