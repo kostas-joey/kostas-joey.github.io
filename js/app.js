@@ -508,7 +508,7 @@ async function displayRecentMatches() {
         const matchesRef = collection(db, "matches");
         const pendingMatchesRef = collection(db, "pendingMatches");
         
-        const matchesQuery = query(matchesRef, orderBy("timestamp", "desc"), limit(10));
+        const matchesQuery = query(matchesRef, orderBy("timestamp", "desc"), limit(30));
         const pendingMatchesQuery = query(pendingMatchesRef, orderBy("timestamp", "desc"));
         
         const [matchesSnapshot, pendingMatchesSnapshot] = await Promise.all([
