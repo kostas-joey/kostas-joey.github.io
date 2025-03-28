@@ -516,6 +516,27 @@ async function displayRecentMatches() {
             getDocs(pendingMatchesQuery)
         ]);
         
+        // Collect all player IDs from matches and pending matches
+        const allPlayerIds = new Set();
+        
+        // Add player IDs from pending matches
+        pendingMatchesSnapshot.forEach(doc => {
+            const match = doc.data();
+            match.team1Players.forEach(id => allPlayerIds.add(id));
+            match.team2Players.forEach(id => allPlayerIds.add(id));
+        });
+        
+        // Add player IDs from approved matches
+        matchesSnapshot.forEach(doc => {
+            const match = doc.data();
+            match.team1Players.forEach(id => allPlayerIds.add(id));
+            match.team2Players.forEach(id => allPlayerIds.add(id));
+            match.eloChanges.forEach(change => allPlayerIds.add(change.player));
+        });
+        
+        // Get display names for all players
+        const playerDisplayNames = await getPlayerDisplayNames(Array.from(allPlayerIds));
+        
         const matchesList = document.getElementById('matches-list');
         matchesList.innerHTML = '';
         
@@ -525,6 +546,10 @@ async function displayRecentMatches() {
             const matchId = doc.id;
             const date = match.timestamp.toDate();
             const formattedDate = date.toLocaleDateString();
+            
+            // Use display names instead of IDs
+            const team1Names = match.team1Players.map(id => playerDisplayNames[id]);
+            const team2Names = match.team2Players.map(id => playerDisplayNames[id]);
             
             // Create score display string if scores are available
             const scoreDisplay = match.team1Score !== undefined && match.team2Score !== undefined ? 
@@ -540,7 +565,7 @@ async function displayRecentMatches() {
                         <div class="pending-badge">PENDING</div>
                     </div>
                     <div class="teams-played">
-                        ${match.team1Players.join(' & ')} vs ${match.team2Players.join(' & ')}
+                        ${team1Names.join(' & ')} vs ${team2Names.join(' & ')}
                     </div>
                     <div class="match-actions">
                         <button class="undo-match" data-match-id="${matchId}">
@@ -557,6 +582,10 @@ async function displayRecentMatches() {
             const match = doc.data();
             const date = match.timestamp.toDate();
             const formattedDate = date.toLocaleDateString();
+            
+            // Use display names instead of IDs
+            const team1Names = match.team1Players.map(id => playerDisplayNames[id]);
+            const team2Names = match.team2Players.map(id => playerDisplayNames[id]);
             
             // Create score display string if scores are available
             const scoreDisplay = match.team1Score !== undefined && match.team2Score !== undefined ? 
@@ -579,8 +608,11 @@ async function displayRecentMatches() {
                             const changeValue = change.change || (hasDetailedRatings ? change.ratingAfter - change.ratingBefore : 0);
                             const direction = changeValue > 0 ? 'elo-positive' : 'elo-negative';
                             
+                            // Use display name instead of ID
+                            const displayName = playerDisplayNames[change.player];
+                            
                             return `<span class="elo-change ${direction} ${isWinner ? 'match-winner' : 'match-loser'}">
-                                ${change.player}: ${hasDetailedRatings ? 
+                                ${displayName}: ${hasDetailedRatings ? 
                                   `${Math.round(change.ratingBefore)} → ${Math.round(change.ratingAfter)}` : 
                                   `${changeValue > 0 ? '+' : ''}${Math.round(changeValue)}`}
                                 ${hasDetailedRatings ? 
@@ -810,4 +842,35 @@ function resetBeads(beads) {
 function updateScore(scoreInput, scoreDisplay, newScore) {
     scoreInput.value = newScore;
     scoreDisplay.textContent = newScore;
+}
+
+// Function to get player display names from their IDs
+async function getPlayerDisplayNames(playerIds) {
+    // Create a map to store player ID -> display name
+    const playerNames = {};
+    
+    try {
+        // Get all players in one batch for efficiency
+        const playersSnapshot = await getDocs(collection(db, "players"));
+        const playersMap = {};
+        
+        // Create a lookup map of all players
+        playersSnapshot.forEach(doc => {
+            playersMap[doc.id] = doc.data().name;
+        });
+        
+        // Map each ID to its corresponding name
+        playerIds.forEach(id => {
+            playerNames[id] = playersMap[id] || id; // Fallback to ID if name not found
+        });
+        
+        return playerNames;
+    } catch (error) {
+        console.error("Error getting player display names:", error);
+        // Return the original IDs as fallback
+        return playerIds.reduce((map, id) => {
+            map[id] = id;
+            return map;
+        }, {});
+    }
 }
